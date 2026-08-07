@@ -3,8 +3,14 @@ from app.models.user import User
 
 
 def init_database():
-    Base.metadata.create_all(bind=engine)
-    print("Database created successfully.")
+
+    Base.metadata.create_all(
+        bind=engine,
+    )
+
+    print(
+        "Database created successfully."
+    )
 
 
 if __name__ == "__main__":
