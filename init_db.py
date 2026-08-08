@@ -1,15 +1,17 @@
 from app.models.database import Base, engine
 from app.models.user import User
+from app.models.payment import Payment
+from app.models.discount import DiscountCode
+from app.models.performance import MonthlyPerformance
 
 
 def init_database():
-
     Base.metadata.create_all(
-        bind=engine,
+        bind=engine
     )
 
     print(
-        "Database created successfully."
+        "ALIFT database initialized successfully."
     )
 
 

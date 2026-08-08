@@ -7,7 +7,11 @@ from sqlalchemy import (
     Integer,
     String,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+)
 
 from .database import Base
 
@@ -24,8 +28,8 @@ class User(Base):
     telegram_id: Mapped[int] = mapped_column(
         BigInteger,
         unique=True,
-        nullable=False,
         index=True,
+        nullable=False,
     )
 
     username: Mapped[str | None] = mapped_column(
@@ -43,9 +47,44 @@ class User(Base):
         nullable=True,
     )
 
+    language: Mapped[str] = mapped_column(
+        String(20),
+        default="fa",
+        nullable=False,
+    )
+
     membership_type: Mapped[str] = mapped_column(
         String(20),
         default="normal",
+        nullable=False,
+    )
+
+    vip_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+
+    referral_code: Mapped[str | None] = mapped_column(
+        String(32),
+        unique=True,
+        index=True,
+        nullable=True,
+    )
+
+    referred_by: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+    )
+
+    points: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+    )
+
+    session_alerts_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
         nullable=False,
     )
 
@@ -58,6 +97,12 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
+        nullable=False,
+    )
+
+    is_banned: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
         nullable=False,
     )
 

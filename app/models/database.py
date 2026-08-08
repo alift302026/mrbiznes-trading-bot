@@ -12,14 +12,10 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 DATABASE_PATH = DATA_DIR / "trading_assistant.db"
 DATABASE_URL = f"sqlite:///{DATABASE_PATH.as_posix()}"
 
-
 engine = create_engine(
     DATABASE_URL,
-    connect_args={
-        "check_same_thread": False,
-    },
+    connect_args={"check_same_thread": False},
 )
-
 
 SessionLocal = sessionmaker(
     bind=engine,
@@ -27,6 +23,5 @@ SessionLocal = sessionmaker(
     autoflush=False,
     expire_on_commit=False,
 )
-
 
 Base = declarative_base()
