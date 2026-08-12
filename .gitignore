@@ -1,26 +1,44 @@
-# Virtual Environment
+# ==========================================
+# ALIFT - GIT IGNORE
+# ==========================================
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Virtual environments
 venv/
 .venv/
 
-# Environment variables
-.env
-
-# Python cache
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+
+# Database / private user data
+data/
+*.db
+*.sqlite
+*.sqlite3
 
 # Logs
+logs/
 *.log
+
+# Personal assets
+assets/welcome.jpg
 
 # IDE
 .vscode/
 .idea/
 
 # OS
-.DS_Store
 Thumbs.db
-# Local database and user data
-data/
-*.db
-*.sqlite
-*.sqlite3
+.DS_Store
+
+# Temporary
+project_tree.txt
+project_files.txt
+*.tmp
