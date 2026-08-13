@@ -1,45 +1,31 @@
 import secrets
 import string
 
-from sqlalchemy import (
-    func,
-    select,
-)
+from sqlalchemy import select
 
-from app.models.database import (
-    SessionLocal,
-)
-
-from app.models.user import (
-    User,
-)
+from app.models.database import SessionLocal
+from app.models.user import User
 
 
 SUPPORTED_LANGUAGES = {
     "fa",
     "en",
     "ar",
-    "tr",
-    "hi",
-    "zh",
-    "ja",
-    "ms",
-    "id",
-    "ng",
 }
 
 
 def generate_referral_code():
-
-    chars = (
+    alphabet = (
         string.ascii_uppercase
         + string.digits
     )
 
-    return "ALIFT-" + "".join(
-        secrets.choice(chars)
+    suffix = "".join(
+        secrets.choice(alphabet)
         for _ in range(8)
     )
+
+    return f"ALIFT-{suffix}"
 
 
 def get_or_create_user(
@@ -50,7 +36,6 @@ def get_or_create_user(
 ):
 
     with SessionLocal() as db:
-
         user = db.scalar(
             select(User).where(
                 User.telegram_id
@@ -59,9 +44,16 @@ def get_or_create_user(
         )
 
         if user:
-
             user.username = username
             user.first_name = first_name
+            user.is_registered = True
+
+            # زبان‌های قدیمی حذف شوند
+            if (
+                user.language
+                not in SUPPORTED_LANGUAGES
+            ):
+                user.language = None
 
             db.commit()
             db.refresh(user)
@@ -78,7 +70,6 @@ def get_or_create_user(
                 == referral_code
             )
         ):
-
             referral_code = (
                 generate_referral_code()
             )
@@ -86,16 +77,14 @@ def get_or_create_user(
         valid_referrer = None
 
         if referred_by:
-
-            referrer = db.scalar(
+            owner = db.scalar(
                 select(User).where(
                     User.referral_code
                     == referred_by
                 )
             )
 
-            if referrer:
-
+            if owner:
                 valid_referrer = (
                     referred_by
                 )
@@ -104,9 +93,16 @@ def get_or_create_user(
             telegram_id=telegram_id,
             username=username,
             first_name=first_name,
+            phone_number=None,
+            language=None,
+            membership_type="normal",
             referral_code=referral_code,
             referred_by=valid_referrer,
-            language="fa",
+            points=0,
+            session_alerts_enabled=True,
+            is_registered=True,
+            is_active=True,
+            is_banned=False,
         )
 
         db.add(user)
@@ -121,7 +117,6 @@ def get_user(
 ):
 
     with SessionLocal() as db:
-
         return db.scalar(
             select(User).where(
                 User.telegram_id
@@ -130,46 +125,15 @@ def get_user(
         )
 
 
-def save_phone_number(
-    telegram_id,
-    phone_number,
-):
-
-    with SessionLocal() as db:
-
-        user = db.scalar(
-            select(User).where(
-                User.telegram_id
-                == telegram_id
-            )
-        )
-
-        if not user:
-
-            return False
-
-        user.phone_number = (
-            phone_number
-        )
-
-        user.is_registered = True
-
-        db.commit()
-
-        return True
-
-
 def set_language(
     telegram_id,
     language,
 ):
 
     if language not in SUPPORTED_LANGUAGES:
-
         return False
 
     with SessionLocal() as db:
-
         user = db.scalar(
             select(User).where(
                 User.telegram_id
@@ -178,7 +142,6 @@ def set_language(
         )
 
         if not user:
-
             return False
 
         user.language = language
@@ -188,12 +151,13 @@ def set_language(
         return True
 
 
-def referral_stats(
+def save_phone_number(
     telegram_id,
+    phone_number,
 ):
 
+    # اختیاری؛ برای ورود استفاده نمی‌شود
     with SessionLocal() as db:
-
         user = db.scalar(
             select(User).where(
                 User.telegram_id
@@ -202,73 +166,74 @@ def referral_stats(
         )
 
         if not user:
+            return False
 
+        user.phone_number = (
+            phone_number
+        )
+
+        db.commit()
+
+        return True
+
+
+def toggle_session_alerts(
+    telegram_id,
+):
+
+    with SessionLocal() as db:
+        user = db.scalar(
+            select(User).where(
+                User.telegram_id
+                == telegram_id
+            )
+        )
+
+        if not user:
             return None
 
-        count = db.scalar(
-            select(
-                func.count(User.id)
-            ).where(
-                User.referred_by
-                == user.referral_code
-            )
+        user.session_alerts_enabled = (
+            not user.session_alerts_enabled
         )
 
-        return {
-            "code":
-                user.referral_code,
+        enabled = (
+            user.session_alerts_enabled
+        )
 
-            "invites":
-                count or 0,
+        db.commit()
 
-            "points":
-                user.points,
-        }
+        return enabled
 
 
-def all_users_count():
+def get_session_alert_users():
 
     with SessionLocal() as db:
-
-        return (
-            db.scalar(
-                select(
-                    func.count(User.id)
-                )
+        users = db.scalars(
+            select(User).where(
+                User.is_active.is_(True),
+                User.is_banned.is_(False),
+                User.session_alerts_enabled.is_(True),
             )
-            or 0
-        )
+        ).all()
 
+        result = []
 
-def registered_users_count():
-
-    with SessionLocal() as db:
-
-        return (
-            db.scalar(
-                select(
-                    func.count(User.id)
-                ).where(
-                    User.is_registered
-                    .is_(True)
-                )
+        for user in users:
+            language = (
+                user.language
+                if user.language
+                in SUPPORTED_LANGUAGES
+                else "en"
             )
-            or 0
-        )
 
+            result.append(
+                {
+                    "telegram_id":
+                        user.telegram_id,
 
-def vip_users_count():
-
-    with SessionLocal() as db:
-
-        return (
-            db.scalar(
-                select(
-                    func.count(User.id)
-                ).where(
-                    User.membership_type
-                    == "vip"
-                )
+                    "language":
+                        language,
+                }
             )
-            or 0
-        )
+
+        return result

@@ -1,8 +1,16 @@
-from app.models.database import Base, engine
+from app.models.database import (
+    Base,
+    engine,
+)
+
 from app.models.user import User
 from app.models.payment import Payment
 from app.models.discount import DiscountCode
 from app.models.performance import MonthlyPerformance
+from app.models.psychology import (
+    EndOfDayCheck,
+    PsychologyAssessment,
+)
 
 
 def init_database():

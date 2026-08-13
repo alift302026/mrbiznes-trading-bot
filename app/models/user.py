@@ -28,8 +28,8 @@ class User(Base):
     telegram_id: Mapped[int] = mapped_column(
         BigInteger,
         unique=True,
-        index=True,
         nullable=False,
+        index=True,
     )
 
     username: Mapped[str | None] = mapped_column(
@@ -42,15 +42,16 @@ class User(Base):
         nullable=True,
     )
 
+    # ورود عادی نیازی به شماره ندارد
     phone_number: Mapped[str | None] = mapped_column(
         String(30),
         nullable=True,
     )
 
-    language: Mapped[str] = mapped_column(
+    # None یعنی هنوز زبان انتخاب نشده
+    language: Mapped[str | None] = mapped_column(
         String(20),
-        default="fa",
-        nullable=False,
+        nullable=True,
     )
 
     membership_type: Mapped[str] = mapped_column(
@@ -67,8 +68,8 @@ class User(Base):
     referral_code: Mapped[str | None] = mapped_column(
         String(32),
         unique=True,
-        index=True,
         nullable=True,
+        index=True,
     )
 
     referred_by: Mapped[str | None] = mapped_column(
@@ -90,7 +91,7 @@ class User(Base):
 
     is_registered: Mapped[bool] = mapped_column(
         Boolean,
-        default=False,
+        default=True,
         nullable=False,
     )
 
