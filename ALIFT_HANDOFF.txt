@@ -1,0 +1,874 @@
+ALIFT TRADER — PROJECT HANDOFF
+==============================
+
+این پیام انتقال کامل پروژه از یک چت قبلی است.
+
+این پروژه از قبل ساخته شده و در حال توسعه است.
+از صفر پروژه نساز.
+معماری را بدون دلیل عوض نکن.
+فایل‌ها و قابلیت‌های سالم فعلی را حذف نکن.
+ابتدا وضعیت زیر را مبنای ادامه کار قرار بده و مستقیماً از بخش
+"NEXT STEP"
+ادامه بده.
+
+اگر برای انجام NEXT STEP اطلاعات کافی در این Handoff وجود دارد، سؤال مقدماتی نپرس و مستقیم ادامه توسعه را مرحله‌به‌مرحله شروع کن.
+
+روش همکاری:
+- من برنامه‌نویس حرفه‌ای نیستم.
+- دستورها را ساده و دقیق بده.
+- هر مرحله مشخص کن دقیقاً کدام فایل تغییر می‌کند.
+- وقتی نیاز به جایگزینی فایل داریم، ترجیح من دریافت نسخه کامل فایل است تا کل فایل قبلی را پاک و نسخه جدید را جایگزین کنم.
+- برای جلوگیری از مصرف زیاد Token، بی‌دلیل کل فایل‌های پروژه را از من درخواست نکن.
+- در صورت نیاز فقط بخش ضروری یا signature تابع را با CMD بررسی کن.
+- هر مرحله را تست کن و بعد به مرحله بعد برو.
+- قبل از تغییر خطرناک Database یا فایل مهم، Backup بگیر.
+- بعد از تکمیل هر ماژول مهم Git Commit/Push انجام بده.
+- Secret، BOT_TOKEN، API KEY، Password و .env نباید در GitHub یا چت قرار بگیرند.
+
+
+==================================================
+1. PROJECT
+==================================================
+
+نام پروژه:
+ALIFT TRADER
+
+Telegram Bot:
+@Alift_trader_bot
+
+مسیر پروژه در Windows:
+
+C:\Users\alireza\Desktop\trading-assistant-platform
+
+زبان:
+Python
+
+Telegram framework:
+python-telegram-bot
+
+Database فعلی:
+SQLite
+
+Database path:
+
+data/trading_assistant.db
+
+Python virtual environment:
+
+venv
+
+اجرای ربات:
+
+venv\Scripts\python.exe main.py
+
+پروژه باید در آینده روی VPS/Cloud به صورت 24/7 اجرا شود تا خاموش بودن کامپیوتر شخصی روی کاربران تأثیر نگذارد.
+
+در آینده SQLite برای Production به PostgreSQL مهاجرت خواهد کرد.
+
+
+==================================================
+2. GIT / BACKUP
+==================================================
+
+Git نصب است.
+
+Branch توسعه:
+
+v3-test
+
+پروژه به GitHub متصل است.
+
+قبل از شروع تغییرات Alert یک Checkpoint روی GitHub Push شده است.
+
+Secretها در .env هستند.
+
+.env در .gitignore قرار دارد.
+
+همچنین این موارد Ignore هستند:
+venv
+__pycache__
+data
+
+بنابراین Database کاربران روی GitHub قرار نمی‌گیرد و برای Database در آینده Backup جداگانه لازم است.
+
+برای وضعیت Git:
+
+git status
+
+برای Push:
+
+git add .
+git commit -m "MESSAGE"
+git push
+
+
+==================================================
+3. PRODUCT VISION
+==================================================
+
+ALIFT TRADER یک دستیار معامله‌گر است.
+
+هدف فعلی اجرای معامله به جای کاربر نیست.
+
+ربات باید داده بازار، Alert، Signal، News، Watchlist، Market Intelligence و ابزارهای مدیریت معامله‌گری ارائه کند.
+
+بازارها:
+- Crypto
+- Forex
+- Gold
+- WTI
+- Brent
+
+قابلیت‌های موردنظر محصول:
+
+AUTH
+- Telegram ID
+- عضویت اجباری کانال
+- Normal / VIP
+- Ban/Unban
+- Profile
+- Delete Account
+
+LANGUAGES
+- فارسی
+- English
+- العربية
+- Türkçe
+- हिन्दी
+- 中文
+- 日本語
+- Bahasa Melayu
+- Bahasa Indonesia
+- English Nigeria
+
+MARKET DATA
+- Top Crypto by Market Cap
+- Forex
+- Gold
+- WTI / Brent
+- BTC Dominance
+- ETH Dominance
+- Stablecoin Dominance
+- Volume
+- Market Cap
+- Timestamp
+
+SESSIONS
+- Sydney
+- Tokyo
+- London
+- New York
+- Open/Closed
+- Countdown
+- Session alerts
+- DST
+- Session overlap
+
+SIGNALS
+در آینده:
+- Free
+- VIP
+- Spot
+- Futures classification
+- EMA
+- RSI
+- MACD
+- ATR
+- Volume
+- Cross
+- Score
+- Entry
+- Stop Loss
+- TP1
+- TP2
+- TP3
+- History
+- Monthly Performance
+
+WATCHLIST
+- Daily
+- Weekly
+- Personal
+
+NEWS
+- Crypto
+- Forex
+- Listings
+- Gold/Oil
+- External sources/channels
+
+REFERRAL
+- Unique code
+- Telegram invite
+- Invites
+- Points
+- Rewards
+- Discount codes
+
+PAYMENT
+در آینده:
+- BTC
+- ETH
+- TRON
+- SOL
+- USDT TRC20
+- USDT ERC20
+- USDT Solana
+- TXID
+- Confirmation
+- Transaction History
+- Card-to-card concept where applicable
+
+PSYCHOLOGY
+- Trading readiness
+- Score
+- پیشنهاد Trade / No Trade بر اساس self-assessment
+- هدف ابزار مدیریت ریسک است، نه تشخیص پزشکی
+
+AI ANALYSIS
+در آینده:
+- کاربر تحلیل خودش را ارسال کند
+- سیستم تحلیل کمکی خودش را ارائه دهد
+
+ADMIN
+در آینده:
+- Statistics
+- Users
+- Ban/Unban
+- VIP
+- Signals
+- Payments
+- Discounts
+- Points
+- Performance
+- Broadcast
+- News
+- Watchlists
+- System Configuration
+- Audit Log
+
+OTHER
+- Education
+- Support
+- Cooperation
+- About
+- Website
+- YouTube
+- Instagram
+- X
+- WhatsApp
+- Our Exchanges
+
+در آینده Website و Telegram Bot باید از Backend مشترک استفاده کنند.
+
+
+==================================================
+4. CURRENT PROJECT STRUCTURE
+==================================================
+
+ساختار مهم فعلی تقریباً:
+
+app/
+
+bot/
+- admin_handlers.py
+- alert_handlers.py
+- general_handlers.py
+- language_handlers.py
+- market_handlers.py
+- module_router.py
+- navigation.py
+- psychology_handlers.py
+- register_handlers.py
+- session_handlers.py
+- welcome_handlers.py
+
+core/
+- config.py
+- plan_limits.py
+
+engines/
+
+alerts/
+- alert_worker.py
+- market_alert_engine.py
+
+exchange/
+- __init__.py
+
+market_data/
+- crypto.py
+- forex.py
+- service.py
+- twelve_data.py
+
+news/
+- __init__.py
+
+payments/
+- __init__.py
+
+psychology/
+- readiness_engine.py
+
+sessions/
+- alert_engine.py
+- session_engine.py
+
+signals/
+- __init__.py
+
+i18n/
+- translations.py
+
+models/
+- alert.py
+- database.py
+- discount.py
+- payment.py
+- performance.py
+- psychology.py
+- user.py
+
+services/
+- alert_service.py
+- psychology_service.py
+- user_service.py
+
+main.py
+
+
+==================================================
+5. MAIN.PY CURRENTLY CONNECTED
+==================================================
+
+قابلیت‌هایی که در نسخه اجرایی main.py متصل هستند:
+
+- /start
+- User creation/retrieval
+- Referral argument detection
+- Ban check
+- Required Telegram channel membership
+- Welcome
+- Language
+- Market
+- Sessions
+- Psychology
+- Alert Center
+- Account
+
+Background workers:
+
+Session Alert Worker:
+تقریباً هر 30 ثانیه
+
+Market Alert Worker:
+تقریباً هر 60 ثانیه
+
+مواردی که در نسخه‌ای که بررسی شد هنوز به صورت کامل به Main Menu متصل نبودند:
+
+- Signals
+- Watchlist
+- News
+- Analysis
+- Trader
+- Exchange Connection
+- VIP/Payment
+- Referral/Rewards
+- Performance
+- Education
+- Support
+- About
+- Admin واقعی
+
+وجود فایل یک Module لزوماً به معنی تکمیل قابلیت نیست.
+
+
+==================================================
+6. ALERT CENTER — CURRENT STATUS
+==================================================
+
+Alert Center قابلیت‌های اصلی زیر را دارد:
+
+- Create Alert
+- My Alerts
+- Toggle
+- Delete
+- Guide
+- Test Notification
+
+Plan Limits:
+
+NORMAL:
+5 Active Alerts
+
+VIP:
+50 Active Alerts
+
+ADMIN:
+Unlimited
+
+ده Crypto فعلی:
+
+BTC/USDT
+ETH/USDT
+BNB/USDT
+SOL/USDT
+XRP/USDT
+DOGE/USDT
+ADA/USDT
+TRX/USDT
+LINK/USDT
+AVAX/USDT
+
+Timeframes:
+
+15m
+1h
+4h
+1d
+
+
+==================================================
+7. ALERT DATABASE UPGRADE ALREADY DONE
+==================================================
+
+Model:
+
+app/models/alert.py
+
+به MarketAlert ستون جدید اضافه شده:
+
+parameters
+
+نوع آن:
+Text
+
+هدف:
+ذخیره JSON تنظیمات اختصاصی هر Alert.
+
+Database Migration روی SQLite واقعی انجام شده است.
+
+قبل Migration ستون‌های market_alerts:
+
+id
+telegram_id
+symbol
+alert_type
+timeframe
+target_value
+is_active
+last_state
+last_triggered_at
+trigger_count
+created_at
+
+بعد Migration:
+
+parameters
+
+هم اضافه شده است.
+
+Backup قبل از Upgrade:
+
+data/trading_assistant_before_alert_upgrade.db
+
+
+==================================================
+8. ALERT SERVICE ALREADY UPGRADED
+==================================================
+
+فایل:
+
+app/services/alert_service.py
+
+create_alert اکنون parameters را قبول می‌کند.
+
+Signature:
+
+(telegram_id, symbol, alert_type, timeframe='1h', target_value=None, parameters=None)
+
+parameters به JSON تبدیل و داخل MarketAlert.parameters ذخیره می‌شود.
+
+قابلیت‌های قبلی حفظ شده‌اند:
+
+- AlertLimitReached
+- plan detection
+- active alert count
+- capacity
+- Normal/VIP/Admin limits
+- create
+- list
+- active alerts
+- toggle
+- delete
+- update state
+- mark triggered
+
+
+==================================================
+9. ALERT ENGINE ALREADY UPGRADED
+==================================================
+
+فایل:
+
+app/engines/alerts/market_alert_engine.py
+
+Market data:
+Binance via ccxt async
+
+Indicators currently supported:
+
+PRICE
+
+EMA custom
+
+RSI custom
+
+MACD
+
+Volume
+
+ATR
+
+ATR%
+
+Engine از parameters پشتیبانی می‌کند.
+
+EMA:
+ema_fast
+ema_slow
+
+RSI:
+rsi_period
+value
+
+ATR:
+atr_period
+value
+
+Volume:
+volume_period
+multiplier
+
+ATR% formula:
+
+ATR / PRICE * 100
+
+Engine با Market Data واقعی BTC/USDT تست شده و خروجی صحیح داده است.
+
+Test شامل:
+- Price
+- EMA
+- RSI
+- MACD
+- ATR
+- ATR%
+- Volume
+
+Import نیز بدون خطا بوده است.
+
+
+==================================================
+10. CUSTOM EMA — IMPORTANT
+==================================================
+
+این تصمیم قطعی محصول است:
+
+EMA نباید فقط EMA20/50 باشد.
+
+کاربر باید بتواند دو عدد دلخواه وارد کند.
+
+مثال:
+
+7 25
+9 21
+20 50
+50 200
+99 150
+
+قانون:
+
+Minimum EMA Period:
+2
+
+Maximum EMA Period:
+200
+
+عدد بالاتر از 200 قبول نشود.
+
+اگر کاربر:
+
+25 7
+
+وارد کرد، سیستم می‌تواند آن را مرتب کند:
+
+Fast = 7
+Slow = 25
+
+دو عدد برابر قبول نشوند.
+
+مثال نامعتبر:
+
+20 20
+
+EMA Alert Types:
+
+Bull Cross
+Bear Cross
+
+
+==================================================
+11. ALERT HANDLER CURRENT UPGRADE
+==================================================
+
+فایل:
+
+app/bot/alert_handlers.py
+
+نسخه کامل آن در آخرین مرحله جایگزین شد.
+
+UI جدید شامل:
+
+Price Above
+Price Below
+
+EMA Bull Cross
+EMA Bear Cross
+
+RSI Above
+RSI Below
+
+MACD Bull
+MACD Bear
+
+Volume Spike
+
+ATR Above
+ATR Below
+
+ATR% Above
+ATR% Below
+
+
+Custom EMA input:
+
+مثال:
+7 25
+
+محدوده:
+2 تا 200
+
+Custom RSI:
+
+مثال:
+14 70
+
+Custom ATR:
+
+مثال:
+14 500
+
+Custom ATR%:
+
+مثال:
+14 2.5
+
+Custom Volume:
+
+مثال:
+2.5
+
+
+==================================================
+12. TEST STATUS
+==================================================
+
+Syntax تست شده با:
+
+venv\Scripts\python.exe -m py_compile ...
+
+و بدون Error بوده است.
+
+EMA Custom داخل Telegram تست شده است.
+
+Test:
+
+BTC/USDT
+→ EMA Bull Cross
+→ 7 25
+→ Timeframe
+→ Create
+
+نتیجه:
+EMA CUSTOM OK
+
+کاربر تأیید کرده:
+
+"EMA اوکیه"
+
+
+==================================================
+13. SECURITY / IMPORTANT RULES
+==================================================
+
+BOT_TOKEN و API KEYها داخل .env باشند.
+
+.env هرگز:
+- Git Commit نشود
+- داخل Chat ارسال نشود
+- Public نشود
+
+Wallet Private Key کاربر نباید ذخیره شود.
+
+برای Payments ترجیحاً Blockchain confirmation / Payment Processor استفاده شود.
+
+اطلاعات شخصی کاربران فقط در حد نیاز جمع‌آوری شود.
+
+SQLite برای Development فعلی مناسب است.
+
+برای Production:
+PostgreSQL + Migration
+
+برای اجرای دائمی:
+VPS / Cloud
+
+برای Source Backup:
+GitHub
+
+
+==================================================
+14. DEVELOPMENT METHOD
+==================================================
+
+پروژه را از صفر بازسازی نکن.
+
+هر بار فقط Module فعلی را تکمیل کن.
+
+ترتیب:
+
+Implement
+→ Syntax Test
+→ Runtime Test
+→ Telegram Test
+→ Git Commit
+→ Next Module
+
+اگر یک قابلیت سالم است، بی‌دلیل Refactor نکن.
+
+قبل تغییر Database:
+Backup
+
+بعد Module مهم:
+Git Commit/Push
+
+در بررسی فایل‌ها از ارسال صدها خط کد در Chat اجتناب کن.
+
+در صورت نیاز از CMD استفاده کن:
+
+inspect.signature()
+
+findstr
+
+py_compile
+
+git diff
+
+git status
+
+
+==================================================
+15. NEXT STEP — START HERE
+==================================================
+
+نقطه دقیق ادامه پروژه اینجاست:
+
+ALERT CENTER تقریباً تکمیل شده و Custom EMA با موفقیت تست شده است.
+
+اول تست نهایی کوتاه Alert Center انجام شود:
+
+1. Price Above/Below
+2. EMA Custom
+3. RSI Custom
+4. MACD
+5. Volume Custom
+6. ATR
+7. ATR%
+8. My Alerts
+9. Toggle
+10. Delete
+11. Alert Limit
+12. Worker Trigger
+
+اگر تست نهایی Alert Center صحیح بود:
+
+Git Commit + Push
+
+سپس مستقیم برو به:
+
+REAL ADMIN PANEL
+
+قابلیت‌های Admin Panel:
+
+1. Dashboard / Statistics
+2. Users
+3. User Search
+4. User Detail
+5. Give VIP
+6. Remove VIP
+7. VIP Expiration
+8. Ban
+9. Unban
+10. Add/Remove Points
+11. Discount Codes
+12. Payments
+13. Broadcast
+14. Signals Management
+15. Watchlist Management
+16. News Management
+17. Performance
+18. System Configuration
+19. Audit Log
+
+Admin Panel فقط برای Telegram IDs موجود در ADMIN_IDS قابل دسترسی باشد.
+
+بعد از Admin Panel، اولویت تقریبی:
+
+Signals Engine
+→ Watchlist
+→ News
+→ Payment/VIP
+→ Referral
+→ AI Analysis
+→ Website/API
+→ PostgreSQL
+→ VPS/24x7 Production Deployment
+
+
+==================================================
+16. INSTRUCTION TO THE NEW AI SESSION
+==================================================
+
+تو ادامه‌دهنده توسعه همین پروژه هستی.
+
+این Handoff را حافظه پایه پروژه در نظر بگیر.
+
+از من نخواه پروژه را از ابتدا توضیح بدهم.
+
+از من نخواه کل چت قبلی را Paste کنم.
+
+قابلیت‌هایی را که در این Handoff تأیید شده‌اند دوباره از صفر نساز.
+
+اگر برای NEXT STEP اطلاعات کافی داری، سؤال مقدماتی نپرس.
+
+مستقیماً بگو:
+
+"اطلاعات پروژه دریافت شد. نقطه ادامه مشخص است: تکمیل تست Alert Center و سپس Admin Panel."
+
+سپس اولین دستور عملی موردنیاز را بده.
+
+اگر برای یک تغییر مشخص واقعاً نیاز به دیدن کدی داری، فقط همان فایل یا بخش ضروری را درخواست کن؛ نه کل پروژه.
+
+تا حد ممکن مصرف Token را پایین نگه دار و Context پروژه را حفظ کن.
+
+END OF HANDOFF

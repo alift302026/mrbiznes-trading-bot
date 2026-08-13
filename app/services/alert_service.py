@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 
 from sqlalchemy import (
     func,
@@ -30,9 +31,8 @@ from app.models.user import (
 # EXCEPTION
 # ============================================================
 
-class AlertLimitReached(
-    Exception
-):
+class AlertLimitReached(Exception):
+
     def __init__(
         self,
         current,
@@ -67,7 +67,6 @@ def get_user_plan(
         )
 
         if not user:
-
             return "normal"
 
         return (
@@ -171,18 +170,74 @@ def ensure_alert_capacity(
     if capacity["full"]:
 
         raise AlertLimitReached(
-            current=capacity[
-                "active"
-            ],
-            limit=capacity[
-                "limit"
-            ],
-            plan=capacity[
-                "plan"
-            ],
+            current=capacity["active"],
+            limit=capacity["limit"],
+            plan=capacity["plan"],
         )
 
     return capacity
+
+
+# ============================================================
+# PARAMETERS
+# ============================================================
+
+def encode_parameters(
+    parameters,
+):
+
+    if parameters is None:
+        return None
+
+    if isinstance(
+        parameters,
+        str,
+    ):
+        return parameters
+
+    return json.dumps(
+        parameters,
+        ensure_ascii=False,
+        separators=(
+            ",",
+            ":",
+        ),
+    )
+
+
+def decode_parameters(
+    parameters,
+):
+
+    if not parameters:
+        return {}
+
+    if isinstance(
+        parameters,
+        dict,
+    ):
+        return parameters
+
+    try:
+
+        result = json.loads(
+            parameters
+        )
+
+        if isinstance(
+            result,
+            dict,
+        ):
+            return result
+
+    except (
+        TypeError,
+        ValueError,
+        json.JSONDecodeError,
+    ):
+        pass
+
+    return {}
 
 
 # ============================================================
@@ -195,10 +250,17 @@ def create_alert(
     alert_type,
     timeframe="1h",
     target_value=None,
+    parameters=None,
 ):
 
     ensure_alert_capacity(
         telegram_id
+    )
+
+    encoded_parameters = (
+        encode_parameters(
+            parameters
+        )
     )
 
     with SessionLocal() as db:
@@ -209,6 +271,7 @@ def create_alert(
             alert_type=alert_type,
             timeframe=timeframe,
             target_value=target_value,
+            parameters=encoded_parameters,
             is_active=True,
         )
 
@@ -292,11 +355,8 @@ def toggle_alert(
         )
 
         if item is None:
-
             return None
 
-        # اگر خاموش است و می‌خواهیم روشن کنیم،
-        # باید دوباره سهمیه بررسی شود.
         if not item.is_active:
 
             ensure_alert_capacity(
@@ -343,7 +403,6 @@ def delete_alert(
         )
 
         if item is None:
-
             return False
 
         db.delete(item)
@@ -369,7 +428,6 @@ def update_alert_state(
         )
 
         if item is None:
-
             return
 
         item.last_state = state
@@ -395,7 +453,6 @@ def mark_triggered(
         )
 
         if item is None:
-
             return
 
         item.last_state = state
@@ -407,7 +464,6 @@ def mark_triggered(
         item.trigger_count += 1
 
         if disable:
-
             item.is_active = False
 
         db.commit()

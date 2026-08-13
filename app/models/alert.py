@@ -7,6 +7,7 @@ from sqlalchemy import (
     Float,
     Integer,
     String,
+    Text,
 )
 
 from sqlalchemy.orm import (
@@ -51,6 +52,36 @@ class MarketAlert(Base):
 
     target_value: Mapped[float | None] = mapped_column(
         Float,
+        nullable=True,
+    )
+
+    # JSON string containing alert-specific settings.
+    #
+    # Examples:
+    #
+    # RSI:
+    # {
+    #     "period": 14,
+    #     "operator": "above",
+    #     "value": 70
+    # }
+    #
+    # EMA Cross:
+    # {
+    #     "fast": 20,
+    #     "slow": 50,
+    #     "direction": "bullish"
+    # }
+    #
+    # ATR:
+    # {
+    #     "period": 14,
+    #     "operator": "above",
+    #     "value": 2,
+    #     "mode": "percent"
+    # }
+    parameters: Mapped[str | None] = mapped_column(
+        Text,
         nullable=True,
     )
 
