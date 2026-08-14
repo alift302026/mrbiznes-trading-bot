@@ -39,26 +39,15 @@ from app.models.database import (
     engine,
 )
 
-# Register all SQLAlchemy models
+# SQLAlchemy model registration
 from app.models.user import User
 from app.models.payment import Payment
 from app.models.discount import DiscountCode
 from app.models.performance import MonthlyPerformance
 from app.models.alert import MarketAlert
-
 from app.models.psychology import (
     EndOfDayCheck,
     PsychologyAssessment,
-)
-
-from app.models.referral import (
-    PointTransaction,
-    ReferralReward,
-)
-
-from app.models.support import (
-    SupportMessage,
-    SupportTicket,
 )
 
 
@@ -100,22 +89,6 @@ from app.bot.alert_handlers import (
     alerts_home,
 )
 
-from app.bot.referral_handlers import (
-    referral_callback,
-    referral_home,
-)
-
-from app.bot.support_handlers import (
-    support_callback,
-    support_home,
-    support_message,
-)
-
-from app.bot.about_handlers import (
-    about_callback,
-    about_home,
-)
-
 
 # ============================================================
 # BACKGROUND ENGINES
@@ -139,10 +112,6 @@ from app.services.user_service import (
     get_user,
 )
 
-from app.services.referral_service import (
-    process_referral_reward,
-)
-
 
 # ============================================================
 # I18N
@@ -158,8 +127,10 @@ from app.i18n.translations import t
 logging.basicConfig(
     level=logging.INFO,
     format=(
-        "%(asctime)s | %(levelname)s | "
-        "%(name)s | %(message)s"
+        "%(asctime)s | "
+        "%(levelname)s | "
+        "%(name)s | "
+        "%(message)s"
     ),
 )
 
@@ -169,7 +140,7 @@ logger = logging.getLogger(
 
 
 # ============================================================
-# CHANNEL
+# CHANNEL KEYBOARD
 # ============================================================
 
 def join_keyboard():
@@ -191,13 +162,21 @@ def join_keyboard():
         [
             InlineKeyboardButton(
                 "✅ بررسی عضویت",
-                callback_data="check_membership",
+                callback_data=(
+                    "check_membership"
+                ),
             )
         ]
     )
 
-    return InlineKeyboardMarkup(rows)
+    return InlineKeyboardMarkup(
+        rows
+    )
 
+
+# ============================================================
+# CHANNEL MEMBERSHIP
+# ============================================================
 
 async def is_channel_member(
     telegram_id,
@@ -209,9 +188,12 @@ async def is_channel_member(
 
     try:
 
-        member = await context.bot.get_chat_member(
-            chat_id=REQUIRED_CHANNEL,
-            user_id=telegram_id,
+        member = await (
+            context.bot
+            .get_chat_member(
+                chat_id=REQUIRED_CHANNEL,
+                user_id=telegram_id,
+            )
         )
 
         return member.status in {
@@ -235,7 +217,9 @@ async def require_channel(
     context,
 ):
 
-    telegram_user = update.effective_user
+    telegram_user = (
+        update.effective_user
+    )
 
     if telegram_user is None:
         return False
@@ -254,11 +238,14 @@ async def require_channel(
             (
                 "🔒 برای استفاده از ALIFT TRADER "
                 "ابتدا باید عضو کانال رسمی شوید.\n\n"
+
                 "1️⃣ روی عضویت در کانال بزنید.\n"
                 "2️⃣ عضو کانال شوید.\n"
                 "3️⃣ بررسی عضویت را بزنید."
             ),
-            reply_markup=join_keyboard(),
+            reply_markup=(
+                join_keyboard()
+            ),
         )
 
     return False
@@ -273,13 +260,19 @@ async def start(
     context: ContextTypes.DEFAULT_TYPE,
 ):
 
-    telegram_user = update.effective_user
+    telegram_user = (
+        update.effective_user
+    )
 
     if (
         telegram_user is None
         or update.message is None
     ):
         return
+
+    # --------------------------------------------------------
+    # REFERRAL
+    # --------------------------------------------------------
 
     referral_code = None
 
@@ -288,45 +281,30 @@ async def start(
         candidate = (
             context.args[0]
             .strip()
-            .upper()
         )
 
-        if candidate.startswith("ALIFT-"):
+        if candidate.startswith(
+            "ALIFT-"
+        ):
+
             referral_code = candidate
 
-    user, created = get_or_create_user(
-        telegram_id=telegram_user.id,
-        username=telegram_user.username,
-        first_name=telegram_user.first_name,
-        referred_by=referral_code,
+    # --------------------------------------------------------
+    # USER
+    # --------------------------------------------------------
+
+    user, _created = (
+        get_or_create_user(
+            telegram_id=telegram_user.id,
+            username=telegram_user.username,
+            first_name=telegram_user.first_name,
+            referred_by=referral_code,
+        )
     )
 
-    # Referral reward
-    if (
-        created
-        and referral_code
-        and user.referred_by
-    ):
-
-        try:
-
-            rewarded = process_referral_reward(
-                telegram_user.id
-            )
-
-            if rewarded:
-
-                logger.info(
-                    "Referral reward processed for user %s",
-                    telegram_user.id,
-                )
-
-        except Exception as exc:
-
-            logger.exception(
-                "Referral reward error: %s",
-                exc,
-            )
+    # --------------------------------------------------------
+    # BAN
+    # --------------------------------------------------------
 
     if user.is_banned:
 
@@ -336,13 +314,27 @@ async def start(
 
         return
 
+    # --------------------------------------------------------
+    # CHANNEL
+    # --------------------------------------------------------
+
     if not await require_channel(
         update,
         context,
     ):
         return
 
-    await send_welcome(update)
+    # --------------------------------------------------------
+    # WELCOME PHOTO
+    # --------------------------------------------------------
+
+    await send_welcome(
+        update
+    )
+
+    # --------------------------------------------------------
+    # LANGUAGE
+    # --------------------------------------------------------
 
     if not user.language:
 
@@ -353,16 +345,35 @@ async def start(
 
         return
 
-    language = user.language
+    language = (
+        user.language
+    )
+
+    # --------------------------------------------------------
+    # MAIN MENU
+    # --------------------------------------------------------
 
     await update.message.reply_text(
         (
-            f"🚀 {t(language, 'welcome')}\n\n"
-            f"{t(language, 'choose')}"
+            "🚀 {}\n\n{}"
+        ).format(
+            t(
+                language,
+                "welcome",
+            ),
+
+            t(
+                language,
+                "choose",
+            ),
         ),
-        reply_markup=main_menu(
-            language,
-            telegram_user.id in ADMIN_IDS,
+
+        reply_markup=(
+            main_menu(
+                language,
+                telegram_user.id
+                in ADMIN_IDS,
+            )
         ),
     )
 
@@ -376,10 +387,14 @@ async def membership_callback(
     context: ContextTypes.DEFAULT_TYPE,
 ):
 
-    query = update.callback_query
+    query = (
+        update.callback_query
+    )
 
     if query is None:
         return
+
+    await query.answer()
 
     member = await is_channel_member(
         query.from_user.id,
@@ -389,16 +404,11 @@ async def membership_callback(
     if not member:
 
         await query.answer(
-            "❌ عضویت تأیید نشد.",
+            "❌ عضویت تأیید نشده است.",
             show_alert=True,
         )
 
         return
-
-    await query.answer(
-        "✅ عضویت تأیید شد.",
-        show_alert=True,
-    )
 
     await query.edit_message_text(
         (
@@ -418,18 +428,23 @@ async def account_page(
     language,
 ):
 
-    username = (
-        f"@{user.username}"
-        if user.username
-        else "-"
-    )
+    username = "-"
+
+    if user.username:
+
+        username = (
+            "@{}".format(
+                user.username
+            )
+        )
 
     vip_expire = "-"
 
     if user.vip_expires_at:
 
         vip_expire = (
-            user.vip_expires_at.strftime(
+            user.vip_expires_at
+            .strftime(
                 "%Y/%m/%d"
             )
         )
@@ -437,20 +452,45 @@ async def account_page(
     text = (
         "👤 ALIFT ACCOUNT\n"
         "━━━━━━━━━━━━━━━━\n\n"
-        f"🆔 Telegram ID\n{user.telegram_id}\n\n"
-        f"👤 Name\n{user.first_name or '-'}\n\n"
-        f"🔗 Username\n{username}\n\n"
-        f"💎 Plan\n{user.membership_type.upper()}\n\n"
-        f"📆 VIP Expire\n{vip_expire}\n\n"
-        f"⭐ Points\n{user.points}\n\n"
-        f"🎁 Referral\n{user.referral_code or '-'}"
+
+        "🆔 Telegram ID\n"
+        "{}\n\n"
+
+        "👤 Name\n"
+        "{}\n\n"
+
+        "🔗 Username\n"
+        "{}\n\n"
+
+        "💎 Plan\n"
+        "{}\n\n"
+
+        "📆 VIP Expire\n"
+        "{}\n\n"
+
+        "⭐ Points\n"
+        "{}\n\n"
+
+        "🎁 Referral\n"
+        "{}"
+    ).format(
+        user.telegram_id,
+        user.first_name or "-",
+        username,
+        user.membership_type.upper(),
+        vip_expire,
+        user.points,
+        user.referral_code or "-",
     )
 
     await update.message.reply_text(
         text,
-        reply_markup=main_menu(
-            language,
-            user.telegram_id in ADMIN_IDS,
+        reply_markup=(
+            main_menu(
+                language,
+                user.telegram_id
+                in ADMIN_IDS,
+            )
         ),
     )
 
@@ -468,13 +508,24 @@ async def temporary_module(
 
     await update.message.reply_text(
         (
-            f"{title}\n"
+            "{}\n"
             "━━━━━━━━━━━━━━━━\n\n"
-            f"{t(language, 'module_soon')}"
+            "{}"
+        ).format(
+            title,
+
+            t(
+                language,
+                "module_soon",
+            ),
         ),
-        reply_markup=main_menu(
-            language,
-            user.telegram_id in ADMIN_IDS,
+
+        reply_markup=(
+            main_menu(
+                language,
+                user.telegram_id
+                in ADMIN_IDS,
+            )
         ),
     )
 
@@ -488,10 +539,7 @@ async def menu_router(
     context: ContextTypes.DEFAULT_TYPE,
 ):
 
-    if (
-        update.message is None
-        or update.effective_user is None
-    ):
+    if update.message is None:
         return
 
     if not await require_channel(
@@ -500,7 +548,12 @@ async def menu_router(
     ):
         return
 
-    telegram_user = update.effective_user
+    telegram_user = (
+        update.effective_user
+    )
+
+    if telegram_user is None:
+        return
 
     user = get_user(
         telegram_user.id
@@ -532,9 +585,9 @@ async def menu_router(
         or ""
     )
 
-    # --------------------------------------------------------
-    # PENDING ALERT INPUT
-    # --------------------------------------------------------
+    # ========================================================
+    # ALERT PRICE INPUT
+    # ========================================================
 
     handled = await alert_price_message(
         update,
@@ -544,21 +597,9 @@ async def menu_router(
     if handled:
         return
 
-    # --------------------------------------------------------
-    # PENDING SUPPORT INPUT
-    # --------------------------------------------------------
-
-    handled = await support_message(
-        update,
-        context,
-    )
-
-    if handled:
-        return
-
-    # --------------------------------------------------------
+    # ========================================================
     # MARKET
-    # --------------------------------------------------------
+    # ========================================================
 
     if text == t(
         language,
@@ -572,9 +613,9 @@ async def menu_router(
 
         return
 
-    # --------------------------------------------------------
-    # ALERTS
-    # --------------------------------------------------------
+    # ========================================================
+    # ALERT CENTER
+    # ========================================================
 
     if text == t(
         language,
@@ -588,9 +629,9 @@ async def menu_router(
 
         return
 
-    # --------------------------------------------------------
+    # ========================================================
     # PSYCHOLOGY
-    # --------------------------------------------------------
+    # ========================================================
 
     if text == t(
         language,
@@ -604,9 +645,9 @@ async def menu_router(
 
         return
 
-    # --------------------------------------------------------
-    # SESSIONS
-    # --------------------------------------------------------
+    # ========================================================
+    # SESSION
+    # ========================================================
 
     if text == t(
         language,
@@ -620,9 +661,9 @@ async def menu_router(
 
         return
 
-    # --------------------------------------------------------
+    # ========================================================
     # LANGUAGE
-    # --------------------------------------------------------
+    # ========================================================
 
     if text == t(
         language,
@@ -636,9 +677,9 @@ async def menu_router(
 
         return
 
-    # --------------------------------------------------------
+    # ========================================================
     # ACCOUNT
-    # --------------------------------------------------------
+    # ========================================================
 
     if text == t(
         language,
@@ -653,57 +694,9 @@ async def menu_router(
 
         return
 
-    # --------------------------------------------------------
-    # REFERRAL & POINTS
-    # --------------------------------------------------------
-
-    if text == t(
-        language,
-        "rewards",
-    ):
-
-        await referral_home(
-            update,
-            context,
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # SUPPORT
-    # --------------------------------------------------------
-
-    if text == t(
-        language,
-        "support",
-    ):
-
-        await support_home(
-            update,
-            context,
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # ABOUT
-    # --------------------------------------------------------
-
-    if text == t(
-        language,
-        "about",
-    ):
-
-        await about_home(
-            update,
-            context,
-        )
-
-        return
-
-    # --------------------------------------------------------
+    # ========================================================
     # ADMIN
-    # --------------------------------------------------------
+    # ========================================================
 
     if text == t(
         language,
@@ -733,9 +726,9 @@ async def menu_router(
 
         return
 
-    # --------------------------------------------------------
+    # ========================================================
     # MODULES NOT CONNECTED YET
-    # --------------------------------------------------------
+    # ========================================================
 
     modules = {
         "signals":
@@ -759,6 +752,9 @@ async def menu_router(
         "vip":
             "💎 ALIFT VIP & PAYMENT",
 
+        "rewards":
+            "🎁 REFERRAL & POINTS",
+
         "performance":
             "📈 MONTHLY PERFORMANCE",
 
@@ -767,9 +763,17 @@ async def menu_router(
 
         "our_exchanges":
             "🏦 OUR EXCHANGES",
+
+        "support":
+            "🎧 ALIFT SUPPORT",
+
+        "about":
+            "🤝 ABOUT ALIFT",
     }
 
-    for key, title in modules.items():
+    for key, title in (
+        modules.items()
+    ):
 
         if text == t(
             language,
@@ -785,14 +789,22 @@ async def menu_router(
 
             return
 
+    # ========================================================
+    # UNKNOWN
+    # ========================================================
+
     await update.message.reply_text(
         t(
             language,
             "choose",
         ),
-        reply_markup=main_menu(
-            language,
-            telegram_user.id in ADMIN_IDS,
+
+        reply_markup=(
+            main_menu(
+                language,
+                telegram_user.id
+                in ADMIN_IDS,
+            )
         ),
     )
 
@@ -828,7 +840,10 @@ def build_application():
         .build()
     )
 
-    # START
+    # --------------------------------------------------------
+    # CORE
+    # --------------------------------------------------------
+
     application.add_handler(
         CommandHandler(
             "start",
@@ -836,79 +851,84 @@ def build_application():
         )
     )
 
-    # CHANNEL
     application.add_handler(
         CallbackQueryHandler(
             membership_callback,
-            pattern="^check_membership$",
+            pattern=(
+                "^check_membership$"
+            ),
         )
     )
 
+    # --------------------------------------------------------
     # LANGUAGE
+    # --------------------------------------------------------
+
     application.add_handler(
         CallbackQueryHandler(
             language_callback,
-            pattern="^lang_",
+            pattern=(
+                "^lang_"
+            ),
         )
     )
 
+    # --------------------------------------------------------
     # MARKET
+    # --------------------------------------------------------
+
     application.add_handler(
         CallbackQueryHandler(
             market_callback,
-            pattern="^market_",
+            pattern=(
+                "^market_"
+            ),
         )
     )
 
+    # --------------------------------------------------------
     # SESSION
+    # --------------------------------------------------------
+
     application.add_handler(
         CallbackQueryHandler(
             session_callback,
-            pattern="^session_",
+            pattern=(
+                "^session_"
+            ),
         )
     )
 
+    # --------------------------------------------------------
     # PSYCHOLOGY
+    # --------------------------------------------------------
+
     application.add_handler(
         CallbackQueryHandler(
             psychology_callback,
-            pattern="^psy_",
+            pattern=(
+                "^psy_"
+            ),
         )
     )
 
-    # ALERT
+    # --------------------------------------------------------
+    # ALERT CENTER
+    # --------------------------------------------------------
+
     application.add_handler(
         CallbackQueryHandler(
             alert_callback,
-            pattern="^alert_",
+            pattern=(
+                "^alert_"
+            ),
         )
     )
 
-    # REFERRAL
-    application.add_handler(
-        CallbackQueryHandler(
-            referral_callback,
-            pattern="^referral_",
-        )
-    )
-
-    # SUPPORT
-    application.add_handler(
-        CallbackQueryHandler(
-            support_callback,
-            pattern="^support_",
-        )
-    )
-
-    # ABOUT
-    application.add_handler(
-        CallbackQueryHandler(
-            about_callback,
-            pattern="^about_",
-        )
-    )
-
+    # --------------------------------------------------------
     # TEXT
+    # --------------------------------------------------------
+
     application.add_handler(
         MessageHandler(
             filters.TEXT
@@ -917,32 +937,46 @@ def build_application():
         )
     )
 
+    # --------------------------------------------------------
+    # ERRORS
+    # --------------------------------------------------------
+
     application.add_error_handler(
         error_handler
     )
 
+    # --------------------------------------------------------
     # SESSION WORKER
+    # --------------------------------------------------------
+
     if application.job_queue is not None:
 
         application.job_queue.run_repeating(
             session_alert_job,
             interval=30,
             first=5,
-            name="session-alert-engine",
+            name=(
+                "session-alert-engine"
+            ),
         )
 
         logger.info(
             "Session Alert Worker: ON"
         )
 
+    # --------------------------------------------------------
     # MARKET ALERT WORKER
+    # --------------------------------------------------------
+
     if application.job_queue is not None:
 
         application.job_queue.run_repeating(
             market_alert_job,
             interval=60,
             first=15,
-            name="market-alert-worker",
+            name=(
+                "market-alert-worker"
+            ),
         )
 
         logger.info(
@@ -966,29 +1000,30 @@ def main():
         "Telegram          : STARTING\n"
         "Languages         : FA / EN / AR\n"
         "Channel           : ENABLED\n"
+        "Welcome           : ENABLED\n"
         "Market            : ENABLED\n"
         "Sessions          : ENABLED\n"
         "Session Alerts    : ENABLED\n"
         "Psychology        : ENABLED\n"
         "Market Alerts     : ENABLED\n"
-        "Referral          : ENABLED\n"
-        "Points Ledger     : ENABLED\n"
-        "Support Tickets   : ENABLED\n"
-        "About             : ENABLED\n"
         "Normal Alerts     : 5\n"
         "VIP Alerts        : 50\n"
         "Admin Alerts      : UNLIMITED\n"
         "========================================\n"
     )
 
-    application = build_application()
+    application = (
+        build_application()
+    )
 
     print(
         "BOT RUNNING"
     )
 
     application.run_polling(
-        allowed_updates=Update.ALL_TYPES
+        allowed_updates=(
+            Update.ALL_TYPES
+        )
     )
 
 
@@ -997,4 +1032,5 @@ def main():
 # ============================================================
 
 if __name__ == "__main__":
+
     main()

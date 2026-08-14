@@ -871,4 +871,25 @@ Signals Engine
 
 تا حد ممکن مصرف Token را پایین نگه دار و Context پروژه را حفظ کن.
 
+FINAL ARCHITECTURE REQUIREMENT
+
+ALIFT TRADER must be designed so the core business logic is not coupled to Telegram.
+
+Telegram Bot is only one client/interface.
+
+Core engines and services must be reusable by:
+- Telegram
+- Website
+- Android
+- iOS
+
+Future architecture:
+Clients
+→ REST/WebSocket API
+→ Backend Services/Engines
+→ PostgreSQL / Cache / Workers
+
+Android and iOS must be buildable later without rewriting the trading engines, alerts, signals, users, payments, psychology, news, and watchlist logic.
+
+
 END OF HANDOFF
