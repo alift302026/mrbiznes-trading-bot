@@ -10,14 +10,13 @@ from telegram.ext import (
     ContextTypes,
 )
 
-from app.engines.alerts.market_alert_engine import (
-    SUPPORTED_SYMBOLS,
-    SUPPORTED_TIMEFRAMES,
+from app.bot.alert_asset_handlers import (
+    market_keyboard,
+    market_text,
 )
 
-from app.engines.alerts.symbol_search import (
-    search_crypto_symbols,
-    validate_crypto_symbol,
+from app.engines.alerts.market_alert_engine import (
+    SUPPORTED_TIMEFRAMES,
 )
 
 from app.services.alert_service import (
@@ -48,8 +47,7 @@ def user_language(
 
     if (
         user
-        and user.language
-        in {
+        and user.language in {
             "fa",
             "en",
             "ar",
@@ -86,9 +84,7 @@ def capacity_bar(
 
     return (
         "█" * filled
-        + "░" * (
-            10 - filled
-        )
+        + "░" * (10 - filled)
     )
 
 
@@ -120,21 +116,21 @@ def alert_home_text(
         "is_admin"
     ]:
 
-        plan_text = "🛡 ADMIN"
+        plan = "🛡 ADMIN"
         usage = f"{active} / ∞"
 
     elif capacity[
         "plan"
     ] == "vip":
 
-        plan_text = "💎 VIP"
+        plan = "💎 VIP"
         usage = (
             f"{active} / {limit}"
         )
 
     else:
 
-        plan_text = "👤 NORMAL"
+        plan = "👤 NORMAL"
         usage = (
             f"{active} / {limit}"
         )
@@ -150,40 +146,18 @@ def alert_home_text(
             "🔔 ALIFT SMART ALERTS\n"
             "━━━━━━━━━━━━━━━━\n\n"
 
-            "👁 لازم نیست ۲۴ ساعته بازار رو "
-            "نگاه کنی؛ ALIFT برات زیر نظرش می‌گیره.\n\n"
-
-            f"{plan_text}\n"
+            f"{plan}\n"
             f"🔔 آلارم فعال: {usage}\n"
             f"{bar}\n\n"
 
-            "🏦 منبع Crypto Alerts: XT\n\n"
+            "🪙 Crypto → XT\n"
+            "💱 Forex → Twelve Data\n\n"
 
-            "💰 Price Above / Below\n"
-            "📈 Custom EMA Cross\n"
-            "📊 Custom RSI\n"
-            "〽️ MACD Cross\n"
-            "💧 Custom Volume\n"
-            "📏 Custom ATR\n"
-            "📐 Custom ATR%"
-        )
-
-    if language == "ar":
-
-        return (
-            "🔔 ALIFT SMART ALERTS\n"
-            "━━━━━━━━━━━━━━━━\n\n"
-
-            f"{plan_text}\n"
-            f"Active: {usage}\n"
-            f"{bar}\n\n"
-
-            "🏦 Crypto Provider: XT\n\n"
             "💰 Price\n"
-            "📈 EMA\n"
-            "📊 RSI\n"
+            "📈 EMA Custom\n"
+            "📊 RSI Custom\n"
             "〽️ MACD\n"
-            "💧 Volume\n"
+            "💧 Volume (Crypto)\n"
             "📏 ATR\n"
             "📐 ATR%"
         )
@@ -192,19 +166,14 @@ def alert_home_text(
         "🔔 ALIFT SMART ALERTS\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
-        f"{plan_text}\n"
-        f"🔔 Active Alerts: {usage}\n"
+        f"{plan}\n"
+        f"Active Alerts: {usage}\n"
         f"{bar}\n\n"
 
-        "🏦 Crypto Provider: XT\n\n"
+        "🪙 Crypto → XT\n"
+        "💱 Forex → Twelve Data\n\n"
 
-        "💰 Price Above / Below\n"
-        "📈 Custom EMA Cross\n"
-        "📊 Custom RSI\n"
-        "〽️ MACD Cross\n"
-        "💧 Custom Volume\n"
-        "📏 Custom ATR\n"
-        "📐 Custom ATR%"
+        "Price / EMA / RSI / MACD / ATR / ATR%"
     )
 
 
@@ -212,103 +181,50 @@ def alert_home_keyboard(
     language,
 ):
 
-    labels = {
-        "fa": {
-            "new":
-                "➕ ساخت آلارم جدید",
+    if language == "fa":
 
-            "mine":
-                "📋 آلارم‌های من",
+        new = "➕ ساخت آلارم جدید"
+        mine = "📋 آلارم‌های من"
+        guide = "📖 راهنما"
+        test = "🧪 تست اعلان"
+        vip = "💎 ارتقا VIP"
 
-            "guide":
-                "📖 راهنمای آلارم‌ها",
+    else:
 
-            "test":
-                "🧪 تست اعلان",
-
-            "vip":
-                "💎 ارتقا به VIP",
-        },
-
-        "en": {
-            "new":
-                "➕ Create Alert",
-
-            "mine":
-                "📋 My Alerts",
-
-            "guide":
-                "📖 Alert Guide",
-
-            "test":
-                "🧪 Test Notification",
-
-            "vip":
-                "💎 Upgrade to VIP",
-        },
-
-        "ar": {
-            "new":
-                "➕ إنشاء تنبيه",
-
-            "mine":
-                "📋 تنبيهاتي",
-
-            "guide":
-                "📖 دليل التنبيهات",
-
-            "test":
-                "🧪 اختبار الإشعار",
-
-            "vip":
-                "💎 VIP",
-        },
-    }[
-        language
-    ]
+        new = "➕ Create Alert"
+        mine = "📋 My Alerts"
+        guide = "📖 Guide"
+        test = "🧪 Test"
+        vip = "💎 VIP"
 
     return InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton(
-                    labels["new"],
-                    callback_data=(
-                        "alert_new"
-                    ),
+                    new,
+                    callback_data="alert_new",
                 )
             ],
-
             [
                 InlineKeyboardButton(
-                    labels["mine"],
-                    callback_data=(
-                        "alert_list"
-                    ),
+                    mine,
+                    callback_data="alert_list",
                 )
             ],
-
             [
                 InlineKeyboardButton(
-                    labels["guide"],
-                    callback_data=(
-                        "alert_guide"
-                    ),
+                    guide,
+                    callback_data="alert_guide",
                 ),
-
                 InlineKeyboardButton(
-                    labels["test"],
-                    callback_data=(
-                        "alert_test"
-                    ),
+                    test,
+                    callback_data="alert_test",
                 ),
             ],
-
             [
                 InlineKeyboardButton(
-                    labels["vip"],
-                    callback_data=(
-                        "alert_vip"
-                    ),
+                    vip,
+                    callback_data="alert_vip",
                 )
             ],
         ]
@@ -320,17 +236,21 @@ async def alerts_home(
     context: ContextTypes.DEFAULT_TYPE,
 ):
 
-    telegram_id = (
+    user_id = (
         update.effective_user.id
     )
 
     language = user_language(
-        telegram_id
+        user_id
+    )
+
+    clear_alert_flow(
+        context
     )
 
     await update.message.reply_text(
         alert_home_text(
-            telegram_id
+            user_id
         ),
         reply_markup=(
             alert_home_keyboard(
@@ -341,531 +261,44 @@ async def alerts_home(
 
 
 # ============================================================
-# LIMIT
-# ============================================================
-
-def limit_message(
-    language,
-    current,
-    limit,
-    plan,
-):
-
-    if language == "fa":
-
-        return (
-            "🔒 سقف آلارم‌های حساب تکمیل شده.\n\n"
-            f"👤 پلن: {plan.upper()}\n"
-            f"🔔 آلارم فعال: {current} / {limit}\n\n"
-            "💎 VIP تا 50 آلارم فعال"
-        )
-
-    return (
-        "🔒 ALERT LIMIT REACHED\n\n"
-        f"Plan: {plan.upper()}\n"
-        f"Active: {current} / {limit}\n\n"
-        "VIP supports up to 50 active alerts."
-    )
-
-
-def limit_keyboard(
-    language,
-):
-
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    "💎 VIP",
-                    callback_data=(
-                        "alert_vip"
-                    ),
-                )
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "📋 Alerts",
-                    callback_data=(
-                        "alert_list"
-                    ),
-                )
-            ],
-        ]
-    )
-
-
-# ============================================================
 # GUIDE
 # ============================================================
 
-def guide_text(
-    language,
-):
-
-    if language == "fa":
-
-        return (
-            "📖 ALIFT ALERT GUIDE\n"
-            "━━━━━━━━━━━━━━━━\n\n"
-
-            "🔎 جستجوی Crypto\n"
-            "نام ارز را وارد کن؛ مثال:\n"
-            "PEPE\n"
-            "SUI\n"
-            "TON\n"
-            "BTC\n"
-            "یا PEPE/USDT\n\n"
-
-            "نماد قبل از ساخت آلارم روی XT "
-            "اعتبارسنجی می‌شود.\n\n"
-
-            "💰 Price\n"
-            "قیمت بالا یا پایین عدد دلخواه.\n\n"
-
-            "📈 EMA Cross\n"
-            "دو عدد دلخواه بین 2 تا 200.\n"
-            "مثال: 7 25\n\n"
-
-            "📊 RSI\n"
-            "Period و Level دلخواه.\n"
-            "مثال: 14 70\n\n"
-
-            "〽️ MACD\n"
-            "Bull / Bear Cross\n\n"
-
-            "💧 Volume\n"
-            "ضریب حجم دلخواه.\n\n"
-
-            "📏 ATR / ATR%\n"
-            "Period و Threshold دلخواه.\n\n"
-
-            "⚠️ آلارم فقط اطلاع‌رسانی است "
-            "و معامله‌ای اجرا نمی‌کند."
-        )
+def guide_text():
 
     return (
         "📖 ALIFT ALERT GUIDE\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
-        "🔎 Search any supported XT Spot/USDT asset.\n\n"
-        "Example: PEPE, SUI, BTC, PEPE/USDT\n\n"
+        "🪙 Crypto\n"
+        "داده از XT دریافت می‌شود.\n"
+        "کاربر Normal ماهانه ۳ جستجوی موفق دارد.\n"
+        "VIP و Admin نامحدود هستند.\n\n"
 
-        "Price / EMA / RSI / MACD / "
-        "Volume / ATR / ATR% are supported.\n\n"
+        "💱 Forex\n"
+        "داده از Twelve Data دریافت می‌شود.\n\n"
 
-        "Alerts are informational only."
+        "📈 EMA\n"
+        "دو عدد دلخواه از 2 تا 200.\n"
+        "مثال: 7 25 یا 50 200\n\n"
+
+        "📊 RSI\n"
+        "Period و Level دلخواه.\n"
+        "مثال: 14 70\n\n"
+
+        "📏 ATR / ATR%\n"
+        "Period و Threshold دلخواه.\n\n"
+
+        "💧 Volume\n"
+        "فقط برای Crypto فعال است.\n\n"
+
+        "⚠️ آلارم‌ها صرفاً اطلاع‌رسانی هستند "
+        "و معامله‌ای اجرا نمی‌کنند."
     )
 
 
 # ============================================================
-# ASSET SELECTION
-# ============================================================
-
-def symbol_keyboard():
-
-    items = list(
-        SUPPORTED_SYMBOLS.items()
-    )
-
-    rows = []
-
-    for index in range(
-        0,
-        len(items),
-        2,
-    ):
-
-        row = []
-
-        for code, symbol in (
-            items[
-                index:
-                index + 2
-            ]
-        ):
-
-            row.append(
-                InlineKeyboardButton(
-                    symbol,
-                    callback_data=(
-                        f"alert_symbol_{code}"
-                    ),
-                )
-            )
-
-        rows.append(
-            row
-        )
-
-    rows.append(
-        [
-            InlineKeyboardButton(
-                "🔎 جستجوی رمز ارز",
-                callback_data=(
-                    "alert_search_crypto"
-                ),
-            )
-        ]
-    )
-
-    rows.append(
-        [
-            InlineKeyboardButton(
-                "⬅️ Back",
-                callback_data=(
-                    "alert_home"
-                ),
-            )
-        ]
-    )
-
-    return InlineKeyboardMarkup(
-        rows
-    )
-
-
-# ============================================================
-# ALERT TYPES
-# ============================================================
-
-def type_keyboard(
-    code,
-):
-
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    "💰 Price Above",
-                    callback_data=(
-                        f"alert_type_{code}_price_above"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "💰 Price Below",
-                    callback_data=(
-                        f"alert_type_{code}_price_below"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "📈 EMA Bull Cross",
-                    callback_data=(
-                        f"alert_type_{code}_ema_bull"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "📉 EMA Bear Cross",
-                    callback_data=(
-                        f"alert_type_{code}_ema_bear"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "📊 RSI Above",
-                    callback_data=(
-                        f"alert_type_{code}_rsi_above"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "📊 RSI Below",
-                    callback_data=(
-                        f"alert_type_{code}_rsi_below"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "〽️ MACD Bull",
-                    callback_data=(
-                        f"alert_type_{code}_macd_bull"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "〽️ MACD Bear",
-                    callback_data=(
-                        f"alert_type_{code}_macd_bear"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "💧 Volume Spike",
-                    callback_data=(
-                        f"alert_type_{code}_volume_spike"
-                    ),
-                )
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "📏 ATR Above",
-                    callback_data=(
-                        f"alert_type_{code}_atr_above"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "📏 ATR Below",
-                    callback_data=(
-                        f"alert_type_{code}_atr_below"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "📐 ATR% Above",
-                    callback_data=(
-                        f"alert_type_{code}_atr_percent_above"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "📐 ATR% Below",
-                    callback_data=(
-                        f"alert_type_{code}_atr_percent_below"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "⬅️ Asset",
-                    callback_data=(
-                        "alert_new"
-                    ),
-                )
-            ],
-        ]
-    )
-
-
-# ============================================================
-# CUSTOM SEARCH SYMBOL TYPES
-# ============================================================
-
-def searched_type_keyboard():
-
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    "💰 Price Above",
-                    callback_data=(
-                        "alert_search_type_price_above"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "💰 Price Below",
-                    callback_data=(
-                        "alert_search_type_price_below"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "📈 EMA Bull Cross",
-                    callback_data=(
-                        "alert_search_type_ema_bull"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "📉 EMA Bear Cross",
-                    callback_data=(
-                        "alert_search_type_ema_bear"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "📊 RSI Above",
-                    callback_data=(
-                        "alert_search_type_rsi_above"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "📊 RSI Below",
-                    callback_data=(
-                        "alert_search_type_rsi_below"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "〽️ MACD Bull",
-                    callback_data=(
-                        "alert_search_type_macd_bull"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "〽️ MACD Bear",
-                    callback_data=(
-                        "alert_search_type_macd_bear"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "💧 Volume Spike",
-                    callback_data=(
-                        "alert_search_type_volume_spike"
-                    ),
-                )
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "📏 ATR Above",
-                    callback_data=(
-                        "alert_search_type_atr_above"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "📏 ATR Below",
-                    callback_data=(
-                        "alert_search_type_atr_below"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "📐 ATR% Above",
-                    callback_data=(
-                        "alert_search_type_atr_percent_above"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "📐 ATR% Below",
-                    callback_data=(
-                        "alert_search_type_atr_percent_below"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "🔎 جستجوی ارز دیگر",
-                    callback_data=(
-                        "alert_search_crypto"
-                    ),
-                )
-            ],
-        ]
-    )
-
-
-# ============================================================
-# TIMEFRAME
-# ============================================================
-
-def timeframe_keyboard(
-    code,
-    alert_type,
-):
-
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    "15M",
-                    callback_data=(
-                        f"alert_tf_{code}_{alert_type}_15m"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "1H",
-                    callback_data=(
-                        f"alert_tf_{code}_{alert_type}_1h"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "4H",
-                    callback_data=(
-                        f"alert_tf_{code}_{alert_type}_4h"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "1D",
-                    callback_data=(
-                        f"alert_tf_{code}_{alert_type}_1d"
-                    ),
-                ),
-            ],
-        ]
-    )
-
-
-def searched_timeframe_keyboard(
-    alert_type,
-):
-
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    "15M",
-                    callback_data=(
-                        f"alert_search_tf_{alert_type}_15m"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "1H",
-                    callback_data=(
-                        f"alert_search_tf_{alert_type}_1h"
-                    ),
-                ),
-            ],
-
-            [
-                InlineKeyboardButton(
-                    "4H",
-                    callback_data=(
-                        f"alert_search_tf_{alert_type}_4h"
-                    ),
-                ),
-
-                InlineKeyboardButton(
-                    "1D",
-                    callback_data=(
-                        f"alert_search_tf_{alert_type}_1d"
-                    ),
-                ),
-            ],
-        ]
-    )
-
-
-# ============================================================
-# TYPE NAMES
+# PARAMETERS
 # ============================================================
 
 def item_parameters(
@@ -906,22 +339,19 @@ def item_parameters(
 
 
 def alert_type_name(
-    value,
+    alert_type,
     parameters=None,
 ):
 
-    params = (
-        parameters
-        or {}
-    )
+    params = parameters or {}
 
-    if value == "price_above":
+    if alert_type == "price_above":
         return "Price ≥"
 
-    if value == "price_below":
+    if alert_type == "price_below":
         return "Price ≤"
 
-    if value in {
+    if alert_type in {
         "ema_bull",
         "ema_bear",
     }:
@@ -938,7 +368,7 @@ def alert_type_name(
 
         direction = (
             "Bull"
-            if value
+            if alert_type
             == "ema_bull"
             else "Bear"
         )
@@ -948,106 +378,146 @@ def alert_type_name(
             f"{direction} Cross"
         )
 
-    if value in {
-        "rsi_high",
-        "rsi_above",
-    }:
-
-        period = params.get(
-            "rsi_period",
-            14,
-        )
-
-        level = params.get(
-            "value",
-            70,
-        )
+    if alert_type == "rsi_above":
 
         return (
-            f"RSI({period}) ≥ {level}"
+            "RSI({}) ≥ {}".format(
+                params.get(
+                    "rsi_period",
+                    14,
+                ),
+                params.get(
+                    "value",
+                    70,
+                ),
+            )
         )
 
-    if value in {
-        "rsi_low",
-        "rsi_below",
-    }:
-
-        period = params.get(
-            "rsi_period",
-            14,
-        )
-
-        level = params.get(
-            "value",
-            30,
-        )
+    if alert_type == "rsi_below":
 
         return (
-            f"RSI({period}) ≤ {level}"
+            "RSI({}) ≤ {}".format(
+                params.get(
+                    "rsi_period",
+                    14,
+                ),
+                params.get(
+                    "value",
+                    30,
+                ),
+            )
         )
 
-    if value == "macd_bull":
+    if alert_type == "macd_bull":
         return "MACD Bull Cross"
 
-    if value == "macd_bear":
+    if alert_type == "macd_bear":
         return "MACD Bear Cross"
 
-    if value == "volume_spike":
-
-        multiplier = params.get(
-            "multiplier",
-            1.8,
-        )
+    if alert_type == "volume_spike":
 
         return (
-            f"Volume ≥ {multiplier}x"
+            "Volume ≥ {}x".format(
+                params.get(
+                    "multiplier",
+                    1.8,
+                )
+            )
         )
 
-    if value == "atr_above":
-
-        period = params.get(
-            "atr_period",
-            14,
-        )
+    if alert_type == "atr_above":
 
         return (
-            f"ATR({period}) Above"
+            "ATR({}) Above".format(
+                params.get(
+                    "atr_period",
+                    14,
+                )
+            )
         )
 
-    if value == "atr_below":
-
-        period = params.get(
-            "atr_period",
-            14,
-        )
+    if alert_type == "atr_below":
 
         return (
-            f"ATR({period}) Below"
+            "ATR({}) Below".format(
+                params.get(
+                    "atr_period",
+                    14,
+                )
+            )
         )
 
-    if value == "atr_percent_above":
-
-        period = params.get(
-            "atr_period",
-            14,
-        )
+    if (
+        alert_type
+        == "atr_percent_above"
+    ):
 
         return (
-            f"ATR%({period}) Above"
+            "ATR%({}) Above".format(
+                params.get(
+                    "atr_period",
+                    14,
+                )
+            )
         )
 
-    if value == "atr_percent_below":
-
-        period = params.get(
-            "atr_period",
-            14,
-        )
+    if (
+        alert_type
+        == "atr_percent_below"
+    ):
 
         return (
-            f"ATR%({period}) Below"
+            "ATR%({}) Below".format(
+                params.get(
+                    "atr_period",
+                    14,
+                )
+            )
         )
 
-    return value
+    return alert_type
+
+
+# ============================================================
+# TIMEFRAME
+# ============================================================
+
+def external_timeframe_keyboard(
+    alert_type,
+):
+
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "15M",
+                    callback_data=(
+                        f"alert_exttf_{alert_type}_15m"
+                    ),
+                ),
+                InlineKeyboardButton(
+                    "1H",
+                    callback_data=(
+                        f"alert_exttf_{alert_type}_1h"
+                    ),
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "4H",
+                    callback_data=(
+                        f"alert_exttf_{alert_type}_4h"
+                    ),
+                ),
+                InlineKeyboardButton(
+                    "1D",
+                    callback_data=(
+                        f"alert_exttf_{alert_type}_1d"
+                    ),
+                ),
+            ],
+        ]
+    )
 
 
 # ============================================================
@@ -1081,8 +551,23 @@ def safely_create_alert(
         return None, exc
 
 
+def limit_text(
+    error,
+):
+
+    return (
+        "🔒 ALERT LIMIT REACHED\n"
+        "━━━━━━━━━━━━━━━━\n\n"
+
+        f"Plan: {error.plan.upper()}\n"
+        f"Active: {error.current} / {error.limit}\n\n"
+
+        "💎 برای آلارم بیشتر حساب VIP لازم است."
+    )
+
+
 # ============================================================
-# LIST
+# MY ALERTS
 # ============================================================
 
 def list_keyboard(
@@ -1117,9 +602,7 @@ def list_keyboard(
         [
             InlineKeyboardButton(
                 "➕ New Alert",
-                callback_data=(
-                    "alert_new"
-                ),
+                callback_data="alert_new",
             )
         ]
     )
@@ -1128,9 +611,7 @@ def list_keyboard(
         [
             InlineKeyboardButton(
                 "🏠 Alert Home",
-                callback_data=(
-                    "alert_home"
-                ),
+                callback_data="alert_home",
             )
         ]
     )
@@ -1149,9 +630,7 @@ async def alert_callback(
     context: ContextTypes.DEFAULT_TYPE,
 ):
 
-    query = (
-        update.callback_query
-    )
+    query = update.callback_query
 
     if query is None:
         return
@@ -1177,6 +656,10 @@ async def alert_callback(
 
     if data == "alert_home":
 
+        clear_alert_flow(
+            context
+        )
+
         await query.edit_message_text(
             alert_home_text(
                 user_id
@@ -1191,15 +674,55 @@ async def alert_callback(
         return
 
     # --------------------------------------------------------
+    # NEW ALERT -> MARKET SEARCH
+    # --------------------------------------------------------
+
+    if data == "alert_new":
+
+        capacity = alert_capacity(
+            user_id
+        )
+
+        if capacity[
+            "full"
+        ]:
+
+            await query.edit_message_text(
+                (
+                    "🔒 سقف آلارم فعال تکمیل شده.\n\n"
+                    "برای ایجاد آلارم جدید، یکی از "
+                    "آلارم‌ها را خاموش/حذف کن یا VIP بگیر."
+                ),
+                reply_markup=(
+                    alert_home_keyboard(
+                        language
+                    )
+                ),
+            )
+
+            return
+
+        clear_alert_flow(
+            context
+        )
+
+        await query.edit_message_text(
+            market_text(),
+            reply_markup=(
+                market_keyboard()
+            ),
+        )
+
+        return
+
+    # --------------------------------------------------------
     # GUIDE
     # --------------------------------------------------------
 
     if data == "alert_guide":
 
         await query.edit_message_text(
-            guide_text(
-                language
-            ),
+            guide_text(),
             reply_markup=(
                 alert_home_keyboard(
                     language
@@ -1220,8 +743,13 @@ async def alert_callback(
             text=(
                 "🚨 ALIFT TEST ALERT\n"
                 "━━━━━━━━━━━━━━━━\n\n"
-                "✅ Notifications are working."
+                "✅ سیستم اعلان فعال است."
             ),
+        )
+
+        await query.answer(
+            "✅ Test alert sent",
+            show_alert=True,
         )
 
         return
@@ -1236,9 +764,17 @@ async def alert_callback(
             (
                 "💎 ALIFT VIP\n"
                 "━━━━━━━━━━━━━━━━\n\n"
-                "NORMAL: 5 Active Alerts\n"
-                "VIP: 50 Active Alerts\n"
-                "ADMIN: Unlimited"
+
+                "👤 NORMAL\n"
+                "🔔 5 Active Alerts\n"
+                "🔎 3 Crypto Searches / Month\n\n"
+
+                "💎 VIP\n"
+                "🔔 50 Active Alerts\n"
+                "🔎 Unlimited Search\n\n"
+
+                "🛡 ADMIN\n"
+                "Unlimited"
             ),
             reply_markup=(
                 alert_home_keyboard(
@@ -1250,249 +786,81 @@ async def alert_callback(
         return
 
     # --------------------------------------------------------
-    # NEW
-    # --------------------------------------------------------
-
-    if data == "alert_new":
-
-        capacity = alert_capacity(
-            user_id
-        )
-
-        if capacity[
-            "full"
-        ]:
-
-            await query.edit_message_text(
-                limit_message(
-                    language,
-                    capacity[
-                        "active"
-                    ],
-                    capacity[
-                        "limit"
-                    ],
-                    capacity[
-                        "plan"
-                    ],
-                ),
-                reply_markup=(
-                    limit_keyboard(
-                        language
-                    )
-                ),
-            )
-
-            return
-
-        context.user_data.pop(
-            "alert_search",
-            None,
-        )
-
-        context.user_data.pop(
-            "awaiting_alert_search",
-            None,
-        )
-
-        await query.edit_message_text(
-            (
-                "🪙 SELECT CRYPTO\n"
-                "━━━━━━━━━━━━━━━━\n\n"
-                "ارزهای سریع یا جستجوی هر ارز "
-                "Spot/USDT موجود در XT:"
-            ),
-            reply_markup=(
-                symbol_keyboard()
-            ),
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # SEARCH CRYPTO
-    # --------------------------------------------------------
-
-    if data == "alert_search_crypto":
-
-        context.user_data[
-            "awaiting_alert_search"
-        ] = True
-
-        context.user_data.pop(
-            "alert_search",
-            None,
-        )
-
-        await query.edit_message_text(
-            (
-                "🔎 SEARCH CRYPTO ON XT\n"
-                "━━━━━━━━━━━━━━━━\n\n"
-
-                "نام رمز ارز را بفرست.\n\n"
-
-                "مثال:\n"
-                "PEPE\n"
-                "SUI\n"
-                "TON\n"
-                "BTC\n"
-                "PEPE/USDT\n\n"
-
-                "🔍 نماد روی XT بررسی می‌شود."
-            )
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # QUICK SYMBOL
+    # EXTERNAL ASSET ALERT TYPE
     # --------------------------------------------------------
 
     if data.startswith(
-        "alert_symbol_"
-    ):
-
-        code = data.replace(
-            "alert_symbol_",
-            "",
-            1,
-        )
-
-        if (
-            code
-            not in SUPPORTED_SYMBOLS
-        ):
-            return
-
-        await query.edit_message_text(
-            (
-                f"🔔 {SUPPORTED_SYMBOLS[code]}\n\n"
-                "Select Alert Type:"
-            ),
-            reply_markup=(
-                type_keyboard(
-                    code
-                )
-            ),
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # QUICK TYPE
-    # --------------------------------------------------------
-
-    if data.startswith(
-        "alert_type_"
-    ):
-
-        payload = data.replace(
-            "alert_type_",
-            "",
-            1,
-        )
-
-        code = None
-        alert_type = None
-
-        for possible_code in (
-            SUPPORTED_SYMBOLS
-        ):
-
-            prefix = (
-                possible_code
-                + "_"
-            )
-
-            if payload.startswith(
-                prefix
-            ):
-
-                code = possible_code
-
-                alert_type = (
-                    payload[
-                        len(prefix):
-                    ]
-                )
-
-                break
-
-        if (
-            code is None
-            or alert_type is None
-        ):
-            return
-
-        symbol = (
-            SUPPORTED_SYMBOLS[
-                code
-            ]
-        )
-
-        # Custom parameters
-        if alert_type in {
-            "ema_bull",
-            "ema_bear",
-            "rsi_above",
-            "rsi_below",
-            "volume_spike",
-            "atr_above",
-            "atr_below",
-            "atr_percent_above",
-            "atr_percent_below",
-        }:
-
-            await begin_custom_input(
-                query=query,
-                context=context,
-                symbol=symbol,
-                alert_type=alert_type,
-                code=code,
-                searched=False,
-            )
-
-            return
-
-        await query.edit_message_text(
-            "⏱ Select Timeframe:",
-            reply_markup=(
-                timeframe_keyboard(
-                    code,
-                    alert_type,
-                )
-            ),
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # SEARCHED SYMBOL TYPE
-    # --------------------------------------------------------
-
-    if data.startswith(
-        "alert_search_type_"
+        "alert_ext_"
     ):
 
         alert_type = data.replace(
-            "alert_search_type_",
+            "alert_ext_",
             "",
             1,
         )
 
-        search = (
+        selected = (
             context.user_data.get(
-                "alert_search"
+                "external_alert_asset"
             )
         )
 
-        if not search:
+        if not selected:
+
+            await query.edit_message_text(
+                (
+                    "❌ Asset selection expired.\n"
+                    "دوباره ارز را انتخاب کن."
+                ),
+                reply_markup=(
+                    market_keyboard()
+                ),
+            )
+
             return
 
-        symbol = search[
+        market = selected[
+            "market"
+        ]
+
+        symbol = selected[
             "symbol"
         ]
 
+        valid_types = {
+            "price_above",
+            "price_below",
+            "ema_bull",
+            "ema_bear",
+            "rsi_above",
+            "rsi_below",
+            "macd_bull",
+            "macd_bear",
+            "volume_spike",
+            "atr_above",
+            "atr_below",
+            "atr_percent_above",
+            "atr_percent_below",
+        }
+
+        if alert_type not in valid_types:
+            return
+
+        # Forex has no centralized spot volume.
+        if (
+            market == "forex"
+            and alert_type
+            == "volume_spike"
+        ):
+
+            await query.answer(
+                "Volume Alert برای Spot Forex فعال نیست.",
+                show_alert=True,
+            )
+
+            return
+
+        # Custom indicators require input first.
         if alert_type in {
             "ema_bull",
             "ema_bear",
@@ -1509,19 +877,22 @@ async def alert_callback(
                 query=query,
                 context=context,
                 symbol=symbol,
+                market=market,
                 alert_type=alert_type,
-                searched=True,
             )
 
             return
 
+        # Price/MACD -> timeframe immediately.
         await query.edit_message_text(
             (
-                f"🔔 {symbol}\n\n"
-                "⏱ Select Timeframe:"
+                "⏱ SELECT TIMEFRAME\n"
+                "━━━━━━━━━━━━━━━━\n\n"
+                f"{symbol}\n"
+                f"{alert_type_name(alert_type)}"
             ),
             reply_markup=(
-                searched_timeframe_keyboard(
+                external_timeframe_keyboard(
                     alert_type
                 )
             ),
@@ -1530,113 +901,15 @@ async def alert_callback(
         return
 
     # --------------------------------------------------------
-    # QUICK TIMEFRAME
+    # EXTERNAL TIMEFRAME
     # --------------------------------------------------------
 
     if data.startswith(
-        "alert_tf_"
+        "alert_exttf_"
     ):
 
         payload = data.replace(
-            "alert_tf_",
-            "",
-            1,
-        )
-
-        code = None
-        remainder = None
-
-        for possible_code in (
-            SUPPORTED_SYMBOLS
-        ):
-
-            prefix = (
-                possible_code
-                + "_"
-            )
-
-            if payload.startswith(
-                prefix
-            ):
-
-                code = possible_code
-
-                remainder = (
-                    payload[
-                        len(prefix):
-                    ]
-                )
-
-                break
-
-        if (
-            code is None
-            or remainder is None
-        ):
-            return
-
-        timeframe = None
-        alert_type = None
-
-        for possible_tf in (
-            SUPPORTED_TIMEFRAMES
-        ):
-
-            suffix = (
-                "_"
-                + possible_tf
-            )
-
-            if remainder.endswith(
-                suffix
-            ):
-
-                timeframe = (
-                    possible_tf
-                )
-
-                alert_type = (
-                    remainder[
-                        :-len(suffix)
-                    ]
-                )
-
-                break
-
-        if (
-            timeframe is None
-            or alert_type is None
-        ):
-            return
-
-        symbol = (
-            SUPPORTED_SYMBOLS[
-                code
-            ]
-        )
-
-        await finish_timeframe(
-            query=query,
-            context=context,
-            user_id=user_id,
-            language=language,
-            symbol=symbol,
-            alert_type=alert_type,
-            timeframe=timeframe,
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # SEARCH TIMEFRAME
-    # --------------------------------------------------------
-
-    if data.startswith(
-        "alert_search_tf_"
-    ):
-
-        payload = data.replace(
-            "alert_search_tf_",
+            "alert_exttf_",
             "",
             1,
         )
@@ -1669,29 +942,164 @@ async def alert_callback(
 
                 break
 
-        search = (
-            context.user_data.get(
-                "alert_search"
-            )
-        )
-
         if (
             timeframe is None
             or alert_type is None
-            or not search
         ):
             return
 
-        await finish_timeframe(
-            query=query,
-            context=context,
-            user_id=user_id,
-            language=language,
-            symbol=search[
+        selected = (
+            context.user_data.get(
+                "external_alert_asset"
+            )
+        )
+
+        if not selected:
+
+            await query.edit_message_text(
+                "❌ Asset selection expired."
+            )
+
+            return
+
+        symbol = selected[
+            "symbol"
+        ]
+
+        market = selected[
+            "market"
+        ]
+
+        # PRICE requires target.
+        if alert_type in {
+            "price_above",
+            "price_below",
+        }:
+
+            context.user_data[
+                "awaiting_alert_price"
+            ] = {
+                "symbol":
+                    symbol,
+
+                "market":
+                    market,
+
+                "alert_type":
+                    alert_type,
+
+                "timeframe":
+                    timeframe,
+            }
+
+            await query.edit_message_text(
+                (
+                    "💰 PRICE ALERT\n"
+                    "━━━━━━━━━━━━━━━━\n\n"
+
+                    f"Asset: {symbol}\n"
+                    f"Market: {market.upper()}\n"
+                    f"TF: {timeframe}\n\n"
+
+                    "قیمت هدف را ارسال کن."
+                )
+            )
+
+            return
+
+        prepared = (
+            context.user_data.get(
+                "prepared_alert"
+            )
+        )
+
+        parameters = {}
+
+        if (
+            prepared
+            and prepared.get(
                 "symbol"
-            ],
-            alert_type=alert_type,
-            timeframe=timeframe,
+            ) == symbol
+            and prepared.get(
+                "alert_type"
+            ) == alert_type
+        ):
+
+            parameters.update(
+                prepared.get(
+                    "parameters"
+                )
+                or {}
+            )
+
+        if market == "forex":
+
+            parameters[
+                "market"
+            ] = "forex"
+
+        else:
+
+            parameters[
+                "market"
+            ] = "crypto"
+
+        item, error = (
+            safely_create_alert(
+                telegram_id=user_id,
+                symbol=symbol,
+                alert_type=alert_type,
+                timeframe=timeframe,
+                parameters=parameters,
+            )
+        )
+
+        context.user_data.pop(
+            "prepared_alert",
+            None,
+        )
+
+        if error:
+
+            await query.edit_message_text(
+                limit_text(
+                    error
+                ),
+                reply_markup=(
+                    alert_home_keyboard(
+                        language
+                    )
+                ),
+            )
+
+            return
+
+        provider = (
+            "Twelve Data"
+            if market == "forex"
+            else "XT"
+        )
+
+        await query.edit_message_text(
+            (
+                "✅ ALERT CREATED\n"
+                "━━━━━━━━━━━━━━━━\n\n"
+
+                f"ID: #{item.id}\n"
+                f"Asset: {item.symbol}\n"
+                f"Market: {market.upper()}\n"
+                f"Provider: {provider}\n"
+                "Type: "
+                f"{alert_type_name(item.alert_type, item_parameters(item))}\n"
+                f"TF: {item.timeframe}\n\n"
+
+                "🟢 ACTIVE"
+            ),
+            reply_markup=(
+                alert_home_keyboard(
+                    language
+                )
+            ),
         )
 
         return
@@ -1710,23 +1118,24 @@ async def alert_callback(
             user_id
         )
 
+        limit = (
+            capacity[
+                "limit"
+            ]
+            if capacity[
+                "limit"
+            ] is not None
+            else "∞"
+        )
+
         lines = [
             "📋 MY ALERTS",
             "━━━━━━━━━━━━━━━━",
             "",
             (
-                "Active: {} / {}"
-            ).format(
-                capacity[
-                    "active"
-                ],
-                capacity[
-                    "limit"
-                ]
-                if capacity[
-                    "limit"
-                ] is not None
-                else "∞",
+                f"Active: "
+                f"{capacity['active']} / "
+                f"{limit}"
             ),
             "",
         ]
@@ -1745,23 +1154,31 @@ async def alert_callback(
                 )
             )
 
+            market = params.get(
+                "market",
+                "crypto",
+            )
+
+            market_icon = (
+                "💱"
+                if market == "forex"
+                else "🪙"
+            )
+
+            status = (
+                "🟢"
+                if item.is_active
+                else "⚫"
+            )
+
             lines.append(
                 (
-                    "{} #{} | {} | {} | {}"
-                ).format(
-                    "🟢"
-                    if item.is_active
-                    else "⚫",
-
-                    item.id,
-                    item.symbol,
-
-                    alert_type_name(
-                        item.alert_type,
-                        params,
-                    ),
-
-                    item.timeframe,
+                    f"{status} "
+                    f"{market_icon} "
+                    f"#{item.id} | "
+                    f"{item.symbol} | "
+                    f"{alert_type_name(item.alert_type, params)} | "
+                    f"{item.timeframe}"
                 )
             )
 
@@ -1821,27 +1238,33 @@ async def alert_callback(
             )
         )
 
+        market = params.get(
+            "market",
+            "crypto",
+        )
+
+        provider = (
+            "Twelve Data"
+            if market == "forex"
+            else "XT"
+        )
+
         await query.edit_message_text(
             (
                 f"🔔 ALERT #{item.id}\n"
                 "━━━━━━━━━━━━━━━━\n\n"
 
                 f"Asset: {item.symbol}\n"
-
+                f"Market: {market.upper()}\n"
+                f"Provider: {provider}\n"
                 "Type: "
                 f"{alert_type_name(item.alert_type, params)}\n"
-
                 f"TF: {item.timeframe}\n"
-
                 "Target: "
                 f"{item.target_value if item.target_value is not None else '-'}\n"
-
                 "Status: "
                 f"{'🟢 ACTIVE' if item.is_active else '⚫ OFF'}\n"
-
-                f"Triggers: {item.trigger_count}\n\n"
-
-                "🏦 Provider: XT"
+                f"Triggers: {item.trigger_count}"
             ),
             reply_markup=(
                 InlineKeyboardMarkup(
@@ -1854,7 +1277,6 @@ async def alert_callback(
                                 ),
                             )
                         ],
-
                         [
                             InlineKeyboardButton(
                                 "🗑 Delete",
@@ -1863,13 +1285,10 @@ async def alert_callback(
                                 ),
                             )
                         ],
-
                         [
                             InlineKeyboardButton(
                                 "⬅️ My Alerts",
-                                callback_data=(
-                                    "alert_list"
-                                ),
+                                callback_data="alert_list",
                             )
                         ],
                     ]
@@ -1910,14 +1329,11 @@ async def alert_callback(
         except AlertLimitReached as exc:
 
             await query.edit_message_text(
-                limit_message(
-                    language,
-                    exc.current,
-                    exc.limit,
-                    exc.plan,
+                limit_text(
+                    exc
                 ),
                 reply_markup=(
-                    limit_keyboard(
+                    alert_home_keyboard(
                         language
                     )
                 ),
@@ -1973,16 +1389,15 @@ async def alert_callback(
 
 
 # ============================================================
-# CUSTOM INPUT START
+# CUSTOM INDICATOR INPUT
 # ============================================================
 
 async def begin_custom_input(
     query,
     context,
     symbol,
+    market,
     alert_type,
-    code=None,
-    searched=False,
 ):
 
     if alert_type in {
@@ -1992,15 +1407,17 @@ async def begin_custom_input(
 
         stage = "ema"
 
-        message = (
+        text = (
             "📈 CUSTOM EMA\n"
             "━━━━━━━━━━━━━━━━\n\n"
             f"Asset: {symbol}\n\n"
 
-            "دو عدد EMA را بفرست.\n"
-            "مثال:\n7 25\n\n"
+            "دو عدد EMA را ارسال کن.\n"
+            "مثال: 7 25\n\n"
 
-            "محدوده هر عدد: 2 تا 200"
+            "حداقل: 2\n"
+            "حداکثر: 200\n"
+            "دو عدد نباید برابر باشند."
         )
 
     elif alert_type in {
@@ -2010,13 +1427,16 @@ async def begin_custom_input(
 
         stage = "rsi"
 
-        message = (
+        text = (
             "📊 CUSTOM RSI\n"
             "━━━━━━━━━━━━━━━━\n\n"
             f"Asset: {symbol}\n\n"
 
-            "Period و Level را بفرست.\n"
-            "مثال:\n14 70"
+            "Period و Level را ارسال کن.\n"
+            "مثال: 14 70\n\n"
+
+            "Period: 2 تا 200\n"
+            "Level: بین 0 و 100"
         )
 
     elif alert_type in {
@@ -2032,32 +1452,31 @@ async def begin_custom_input(
             "14 2.5"
             if "percent"
             in alert_type
-            else "14 500"
+            else "14 0.005"
         )
 
-        message = (
+        text = (
             "📏 CUSTOM ATR\n"
             "━━━━━━━━━━━━━━━━\n\n"
             f"Asset: {symbol}\n\n"
 
-            "Period و Threshold را بفرست.\n"
-            f"مثال:\n{example}"
+            "Period و Threshold را ارسال کن.\n"
+            f"مثال: {example}\n\n"
+
+            "Period: 2 تا 200"
         )
 
-    elif (
-        alert_type
-        == "volume_spike"
-    ):
+    elif alert_type == "volume_spike":
 
         stage = "volume"
 
-        message = (
-            "💧 CUSTOM VOLUME\n"
+        text = (
+            "💧 VOLUME SPIKE\n"
             "━━━━━━━━━━━━━━━━\n\n"
             f"Asset: {symbol}\n\n"
 
-            "ضریب حجم را بفرست.\n"
-            "مثال:\n2.5"
+            "ضریب حجم را ارسال کن.\n"
+            "مثال: 2.5"
         )
 
     else:
@@ -2072,144 +1491,15 @@ async def begin_custom_input(
         "symbol":
             symbol,
 
+        "market":
+            market,
+
         "alert_type":
             alert_type,
-
-        "code":
-            code,
-
-        "searched":
-            searched,
     }
 
     await query.edit_message_text(
-        message
-    )
-
-
-# ============================================================
-# FINISH TIMEFRAME
-# ============================================================
-
-async def finish_timeframe(
-    query,
-    context,
-    user_id,
-    language,
-    symbol,
-    alert_type,
-    timeframe,
-):
-
-    if alert_type in {
-        "price_above",
-        "price_below",
-    }:
-
-        context.user_data[
-            "awaiting_alert_price"
-        ] = {
-            "symbol":
-                symbol,
-
-            "alert_type":
-                alert_type,
-
-            "timeframe":
-                timeframe,
-        }
-
-        await query.edit_message_text(
-            (
-                "💰 PRICE ALERT\n"
-                "━━━━━━━━━━━━━━━━\n\n"
-
-                f"Asset: {symbol}\n"
-                f"TF: {timeframe}\n\n"
-
-                "قیمت هدف را بفرست."
-            )
-        )
-
-        return
-
-    prepared = (
-        context.user_data.get(
-            "prepared_alert"
-        )
-    )
-
-    parameters = None
-
-    if (
-        prepared
-        and prepared.get(
-            "symbol"
-        ) == symbol
-        and prepared.get(
-            "alert_type"
-        ) == alert_type
-    ):
-
-        parameters = (
-            prepared.get(
-                "parameters"
-            )
-        )
-
-    item, error = (
-        safely_create_alert(
-            telegram_id=user_id,
-            symbol=symbol,
-            alert_type=alert_type,
-            timeframe=timeframe,
-            parameters=parameters,
-        )
-    )
-
-    context.user_data.pop(
-        "prepared_alert",
-        None,
-    )
-
-    if error:
-
-        await query.edit_message_text(
-            limit_message(
-                language,
-                error.current,
-                error.limit,
-                error.plan,
-            ),
-            reply_markup=(
-                limit_keyboard(
-                    language
-                )
-            ),
-        )
-
-        return
-
-    await query.edit_message_text(
-        (
-            "✅ ALERT CREATED\n"
-            "━━━━━━━━━━━━━━━━\n\n"
-
-            f"ID: #{item.id}\n"
-            f"Asset: {item.symbol}\n"
-
-            "Type: "
-            f"{alert_type_name(item.alert_type, item_parameters(item))}\n"
-
-            f"TF: {item.timeframe}\n"
-            "🏦 Provider: XT\n"
-            "Status: 🟢 ACTIVE"
-        ),
-        reply_markup=(
-            alert_home_keyboard(
-                language
-            )
-        ),
+        text
     )
 
 
@@ -2224,8 +1514,7 @@ async def alert_price_message(
 
     if (
         update.message is None
-        or update.effective_user
-        is None
+        or update.effective_user is None
     ):
         return False
 
@@ -2239,121 +1528,6 @@ async def alert_price_message(
     ).strip()
 
     # --------------------------------------------------------
-    # SEARCH CRYPTO
-    # --------------------------------------------------------
-
-    if context.user_data.get(
-        "awaiting_alert_search"
-    ):
-
-        if len(text) > 30:
-
-            await update.message.reply_text(
-                "❌ نام رمز ارز معتبر نیست."
-            )
-
-            return True
-
-        await update.message.reply_text(
-            "🔍 در حال بررسی نماد روی XT..."
-        )
-
-        try:
-
-            symbol = (
-                await validate_crypto_symbol(
-                    text
-                )
-            )
-
-        except Exception:
-
-            await update.message.reply_text(
-                (
-                    "❌ ارتباط با XT یا بررسی نماد "
-                    "با خطا مواجه شد.\n"
-                    "چند لحظه بعد دوباره تلاش کن."
-                )
-            )
-
-            return True
-
-        if not symbol:
-
-            try:
-
-                results = (
-                    await search_crypto_symbols(
-                        text,
-                        limit=8,
-                    )
-                )
-
-            except Exception:
-
-                results = []
-
-            if results:
-
-                suggestions = (
-                    "\n".join(
-                        f"• {item}"
-                        for item
-                        in results
-                    )
-                )
-
-                await update.message.reply_text(
-                    (
-                        "❌ نماد دقیق پیدا نشد.\n\n"
-                        "نتایج نزدیک روی XT:\n"
-                        f"{suggestions}\n\n"
-                        "یکی از نمادها را دوباره ارسال کن."
-                    )
-                )
-
-            else:
-
-                await update.message.reply_text(
-                    (
-                        "❌ این نماد در بازار Spot/USDT "
-                        "صرافی XT پیدا نشد.\n\n"
-                        "مثال: BTC یا PEPE/USDT"
-                    )
-                )
-
-            return True
-
-        context.user_data.pop(
-            "awaiting_alert_search",
-            None,
-        )
-
-        context.user_data[
-            "alert_search"
-        ] = {
-            "symbol":
-                symbol
-        }
-
-        await update.message.reply_text(
-            (
-                "✅ رمز ارز پیدا شد\n"
-                "━━━━━━━━━━━━━━━━\n\n"
-
-                f"🪙 {symbol}\n"
-                "🏦 XT Spot\n\n"
-
-                "نوع آلارم را انتخاب کن:"
-            ),
-            reply_markup=(
-                searched_type_keyboard()
-            ),
-        )
-
-        return True
-
-    # --------------------------------------------------------
     # CUSTOM INDICATOR
     # --------------------------------------------------------
 
@@ -2365,25 +1539,24 @@ async def alert_price_message(
 
     if custom:
 
-        value_text = (
+        normalized = (
             text.replace(
                 ",",
                 ".",
             )
         )
 
-        stage = (
-            custom[
-                "stage"
-            ]
-        )
+        stage = custom[
+            "stage"
+        ]
 
         try:
 
+            # EMA
             if stage == "ema":
 
                 parts = (
-                    value_text.split()
+                    normalized.split()
                 )
 
                 if len(parts) != 2:
@@ -2429,10 +1602,11 @@ async def alert_price_message(
                     f"EMA {fast}/{slow}"
                 )
 
+            # RSI
             elif stage == "rsi":
 
                 parts = (
-                    value_text.split()
+                    normalized.split()
                 )
 
                 if len(parts) != 2:
@@ -2442,7 +1616,7 @@ async def alert_price_message(
                     parts[0]
                 )
 
-                level = float(
+                value = float(
                     parts[1]
                 )
 
@@ -2452,7 +1626,7 @@ async def alert_price_message(
                     raise ValueError
 
                 if not (
-                    0 < level < 100
+                    0 < value < 100
                 ):
                     raise ValueError
 
@@ -2461,17 +1635,19 @@ async def alert_price_message(
                         period,
 
                     "value":
-                        level,
+                        value,
                 }
 
                 confirmation = (
-                    f"RSI({period}) {level:g}"
+                    f"RSI({period}) "
+                    f"{value:g}"
                 )
 
+            # ATR
             elif stage == "atr":
 
                 parts = (
-                    value_text.split()
+                    normalized.split()
                 )
 
                 if len(parts) != 2:
@@ -2481,7 +1657,7 @@ async def alert_price_message(
                     parts[0]
                 )
 
-                threshold = float(
+                value = float(
                     parts[1]
                 )
 
@@ -2490,7 +1666,7 @@ async def alert_price_message(
                 ):
                     raise ValueError
 
-                if threshold <= 0:
+                if value <= 0:
                     raise ValueError
 
                 parameters = {
@@ -2498,18 +1674,19 @@ async def alert_price_message(
                         period,
 
                     "value":
-                        threshold,
+                        value,
                 }
 
                 confirmation = (
                     f"ATR({period}) "
-                    f"{threshold:g}"
+                    f"{value:g}"
                 )
 
+            # VOLUME
             elif stage == "volume":
 
                 multiplier = float(
-                    value_text
+                    normalized
                 )
 
                 if not (
@@ -2526,7 +1703,8 @@ async def alert_price_message(
                 }
 
                 confirmation = (
-                    f"Volume {multiplier:g}x"
+                    f"Volume "
+                    f"{multiplier:g}x"
                 )
 
             else:
@@ -2538,14 +1716,22 @@ async def alert_price_message(
                 (
                     "❌ مقدار معتبر نیست.\n\n"
 
-                    "EMA: 7 25\n"
-                    "RSI: 14 70\n"
-                    "ATR: 14 2.5\n"
-                    "Volume: 2.5"
+                    "EMA → 7 25\n"
+                    "RSI → 14 70\n"
+                    "ATR → 14 2.5\n"
+                    "Volume → 2.5"
                 )
             )
 
             return True
+
+        market = custom[
+            "market"
+        ]
+
+        parameters[
+            "market"
+        ] = market
 
         context.user_data[
             "prepared_alert"
@@ -2569,38 +1755,21 @@ async def alert_price_message(
             None,
         )
 
-        if custom.get(
-            "searched"
-        ):
+        await update.message.reply_text(
+            (
+                "✅ تنظیمات ثبت شد\n"
+                "━━━━━━━━━━━━━━━━\n\n"
 
-            keyboard = (
-                searched_timeframe_keyboard(
+                f"{confirmation}\n\n"
+                "⏱ Timeframe را انتخاب کن:"
+            ),
+            reply_markup=(
+                external_timeframe_keyboard(
                     custom[
                         "alert_type"
                     ]
                 )
-            )
-
-        else:
-
-            keyboard = (
-                timeframe_keyboard(
-                    custom[
-                        "code"
-                    ],
-                    custom[
-                        "alert_type"
-                    ],
-                )
-            )
-
-        await update.message.reply_text(
-            (
-                "✅ تنظیمات ثبت شد\n\n"
-                f"{confirmation}\n\n"
-                "⏱ Timeframe را انتخاب کن:"
             ),
-            reply_markup=keyboard,
         )
 
         return True
@@ -2618,9 +1787,8 @@ async def alert_price_message(
     if not pending:
         return False
 
-    value_text = (
-        text
-        .replace(
+    normalized = (
+        text.replace(
             ",",
             "",
         )
@@ -2629,7 +1797,7 @@ async def alert_price_message(
     try:
 
         value = float(
-            value_text
+            normalized
         )
 
         if value <= 0:
@@ -2639,16 +1807,21 @@ async def alert_price_message(
 
         await update.message.reply_text(
             (
-                "❌ قیمت معتبر بفرست.\n"
-                "مثال: 65000"
+                "❌ قیمت معتبر ارسال کن.\n"
+                "مثال: 65000 یا 1.15"
             )
         )
 
         return True
 
-    language = user_language(
-        user_id
-    )
+    market = pending[
+        "market"
+    ]
+
+    parameters = {
+        "market":
+            market,
+    }
 
     item, error = (
         safely_create_alert(
@@ -2663,6 +1836,7 @@ async def alert_price_message(
                 "timeframe"
             ],
             target_value=value,
+            parameters=parameters,
         )
     )
 
@@ -2671,23 +1845,30 @@ async def alert_price_message(
         None,
     )
 
+    language = user_language(
+        user_id
+    )
+
     if error:
 
         await update.message.reply_text(
-            limit_message(
-                language,
-                error.current,
-                error.limit,
-                error.plan,
+            limit_text(
+                error
             ),
             reply_markup=(
-                limit_keyboard(
+                alert_home_keyboard(
                     language
                 )
             ),
         )
 
         return True
+
+    provider = (
+        "Twelve Data"
+        if market == "forex"
+        else "XT"
+    )
 
     await update.message.reply_text(
         (
@@ -2696,10 +1877,12 @@ async def alert_price_message(
 
             f"ID: #{item.id}\n"
             f"Asset: {item.symbol}\n"
-            f"Target: {item.target_value:,.8f}\n"
-            f"TF: {item.timeframe}\n"
-            "🏦 Provider: XT\n"
-            "Status: 🟢 ACTIVE"
+            f"Market: {market.upper()}\n"
+            f"Provider: {provider}\n"
+            f"Target: {item.target_value}\n"
+            f"TF: {item.timeframe}\n\n"
+
+            "🟢 ACTIVE"
         ),
         reply_markup=(
             alert_home_keyboard(
@@ -2709,3 +1892,26 @@ async def alert_price_message(
     )
 
     return True
+
+
+# ============================================================
+# CLEAR FLOW
+# ============================================================
+
+def clear_alert_flow(
+    context,
+):
+
+    for key in [
+        "awaiting_alert_price",
+        "awaiting_alert_custom",
+        "prepared_alert",
+        "external_alert_asset",
+        "selected_asset",
+        "asset_input",
+    ]:
+
+        context.user_data.pop(
+            key,
+            None,
+        )

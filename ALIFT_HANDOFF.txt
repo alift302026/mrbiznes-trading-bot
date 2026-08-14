@@ -1,425 +1,220 @@
 ALIFT TRADER — PROJECT HANDOFF
-==============================
+VERSION: 2026-08-14
+========================================
 
-این پیام انتقال کامل پروژه از یک چت قبلی است.
+IMPORTANT INSTRUCTION FOR NEW AI SESSION
 
-این پروژه از قبل ساخته شده و در حال توسعه است.
-از صفر پروژه نساز.
-معماری را بدون دلیل عوض نکن.
-فایل‌ها و قابلیت‌های سالم فعلی را حذف نکن.
-ابتدا وضعیت زیر را مبنای ادامه کار قرار بده و مستقیماً از بخش
-"NEXT STEP"
-ادامه بده.
+این پروژه از قبل ساخته شده و ادامه یک پروژه واقعی است.
+پروژه را از صفر نساز.
+از من نخواه کل چت قبلی را توضیح بدهم.
+این فایل Context اصلی پروژه است.
 
-اگر برای انجام NEXT STEP اطلاعات کافی در این Handoff وجود دارد، سؤال مقدماتی نپرس و مستقیم ادامه توسعه را مرحله‌به‌مرحله شروع کن.
+اگر اطلاعات موردنیاز در این Handoff وجود دارد، سؤال مقدماتی نپرس.
+مستقیماً از بخش NEXT STEP ادامه بده.
 
-روش همکاری:
-- من برنامه‌نویس حرفه‌ای نیستم.
-- دستورها را ساده و دقیق بده.
-- هر مرحله مشخص کن دقیقاً کدام فایل تغییر می‌کند.
-- وقتی نیاز به جایگزینی فایل داریم، ترجیح من دریافت نسخه کامل فایل است تا کل فایل قبلی را پاک و نسخه جدید را جایگزین کنم.
-- برای جلوگیری از مصرف زیاد Token، بی‌دلیل کل فایل‌های پروژه را از من درخواست نکن.
-- در صورت نیاز فقط بخش ضروری یا signature تابع را با CMD بررسی کن.
-- هر مرحله را تست کن و بعد به مرحله بعد برو.
-- قبل از تغییر خطرناک Database یا فایل مهم، Backup بگیر.
-- بعد از تکمیل هر ماژول مهم Git Commit/Push انجام بده.
-- Secret، BOT_TOKEN، API KEY، Password و .env نباید در GitHub یا چت قرار بگیرند.
+من برنامه‌نویس حرفه‌ای نیستم.
+مراحل را ساده، دقیق و مرحله‌به‌مرحله بگو.
+
+ترجیح من:
+اگر فایلی باید تغییر کند، نسخه کامل فایل را بده تا کل نسخه قبلی را پاک و نسخه جدید را جایگزین کنم.
+
+از درخواست بی‌دلیل فایل‌های بزرگ خودداری کن تا Token چت مصرف نشود.
+
+قبل از تغییر Database:
+Backup
+
+بعد از تکمیل Module مهم:
+Git Commit + Push
+
+هیچ Secret شامل API Key / BOT_TOKEN / Password / Seed Phrase / Private Key نباید در Chat یا GitHub قرار بگیرد.
 
 
-==================================================
-1. PROJECT
-==================================================
+========================================
+PROJECT
+========================================
 
-نام پروژه:
+Name:
 ALIFT TRADER
 
-Telegram Bot:
+Telegram:
 @Alift_trader_bot
 
-مسیر پروژه در Windows:
-
+Project path:
 C:\Users\alireza\Desktop\trading-assistant-platform
 
-زبان:
-Python
-
-Telegram framework:
-python-telegram-bot
-
-Database فعلی:
-SQLite
-
-Database path:
-
-data/trading_assistant.db
-
 Python virtual environment:
-
 venv
 
-اجرای ربات:
-
+Run:
 venv\Scripts\python.exe main.py
 
-پروژه باید در آینده روی VPS/Cloud به صورت 24/7 اجرا شود تا خاموش بودن کامپیوتر شخصی روی کاربران تأثیر نگذارد.
+Framework:
+python-telegram-bot
+SQLAlchemy
+SQLite Development DB
 
-در آینده SQLite برای Production به PostgreSQL مهاجرت خواهد کرد.
+Database:
+data/trading_assistant.db
 
+Future:
+PostgreSQL + VPS/Cloud
 
-==================================================
-2. GIT / BACKUP
-==================================================
-
-Git نصب است.
-
-Branch توسعه:
-
+Git Branch:
 v3-test
 
-پروژه به GitHub متصل است.
+GitHub connected.
 
-قبل از شروع تغییرات Alert یک Checkpoint روی GitHub Push شده است.
+.env is ignored.
 
-Secretها در .env هستند.
+Admin Telegram ID:
+1432178804
 
-.env در .gitignore قرار دارد.
-
-همچنین این موارد Ignore هستند:
-venv
-__pycache__
-data
-
-بنابراین Database کاربران روی GitHub قرار نمی‌گیرد و برای Database در آینده Backup جداگانه لازم است.
-
-برای وضعیت Git:
-
-git status
-
-برای Push:
-
-git add .
-git commit -m "MESSAGE"
-git push
+ADMIN_IDS now recognizes this Admin and Admin limits are unlimited.
 
 
-==================================================
-3. PRODUCT VISION
-==================================================
+========================================
+FINAL ARCHITECTURE REQUIREMENT
+========================================
 
-ALIFT TRADER یک دستیار معامله‌گر است.
+ALIFT must NOT be coupled to Telegram.
 
-هدف فعلی اجرای معامله به جای کاربر نیست.
+Telegram is only one client.
 
-ربات باید داده بازار، Alert، Signal، News، Watchlist، Market Intelligence و ابزارهای مدیریت معامله‌گری ارائه کند.
+Future clients:
+Telegram
+Website
+Android
+iOS
 
-بازارها:
-- Crypto
-- Forex
-- Gold
-- WTI
-- Brent
+Architecture goal:
 
-قابلیت‌های موردنظر محصول:
+Clients
+→ REST/WebSocket API
+→ Services / Engines
+→ PostgreSQL / Workers / Cache
 
-AUTH
-- Telegram ID
-- عضویت اجباری کانال
-- Normal / VIP
-- Ban/Unban
-- Profile
-- Delete Account
+Business logic must remain reusable.
 
+Possible mobile strategy later:
+Flutter / React Native.
+
+Android/iOS must NOT require rewriting Alerts, Signals, News, Payments, Psychology, Users, etc.
+
+
+========================================
 LANGUAGES
-- فارسی
-- English
-- العربية
-- Türkçe
-- हिन्दी
-- 中文
-- 日本語
-- Bahasa Melayu
-- Bahasa Indonesia
-- English Nigeria
+========================================
 
+Project language scope changed.
+
+ONLY THREE LANGUAGES:
+
+fa
+en
+ar
+
+UI:
+
+🇮🇷 فارسی (همیشه جاویدان)
+🇬🇧 English
+🇸🇦 العربية
+
+Do NOT implement previous 10-language plan.
+
+
+========================================
+AUTH / USER
+========================================
+
+Implemented:
+
+Telegram ID registration
+Required Telegram Channel membership
+Normal / VIP
+Ban support
+User profile
+Language
+Referral code
+Points
+VIP expiration
+
+Normal login does NOT currently require phone number.
+
+
+========================================
 MARKET DATA
-- Top Crypto by Market Cap
-- Forex
-- Gold
-- WTI / Brent
-- BTC Dominance
-- ETH Dominance
-- Stablecoin Dominance
-- Volume
-- Market Cap
-- Timestamp
+========================================
 
+Existing market modules include:
+
+Crypto
+Forex
+Gold
+Oil
+Market timestamps
+
+Crypto Alerts Provider:
+XT
+
+Forex Alerts Provider:
+Twelve Data
+
+Twelve Data API Key exists in .env:
+
+TWELVE_DATA_API_KEY
+
+Do NOT expose value.
+
+Binance was intentionally removed from Alert Engine because developer cannot rely on Binance access.
+
+
+========================================
 SESSIONS
-- Sydney
-- Tokyo
-- London
-- New York
-- Open/Closed
-- Countdown
-- Session alerts
-- DST
-- Session overlap
+========================================
 
-SIGNALS
-در آینده:
-- Free
-- VIP
-- Spot
-- Futures classification
-- EMA
-- RSI
-- MACD
-- ATR
-- Volume
-- Cross
-- Score
-- Entry
-- Stop Loss
-- TP1
-- TP2
-- TP3
-- History
-- Monthly Performance
+Implemented:
 
-WATCHLIST
-- Daily
-- Weekly
-- Personal
+Sydney
+Tokyo
+London
+New York
 
-NEWS
-- Crypto
-- Forex
-- Listings
-- Gold/Oil
-- External sources/channels
+Open/Closed
+Countdown
+Session overlap
+DST
+Session Alert Worker
 
-REFERRAL
-- Unique code
-- Telegram invite
-- Invites
-- Points
-- Rewards
-- Discount codes
-
-PAYMENT
-در آینده:
-- BTC
-- ETH
-- TRON
-- SOL
-- USDT TRC20
-- USDT ERC20
-- USDT Solana
-- TXID
-- Confirmation
-- Transaction History
-- Card-to-card concept where applicable
-
-PSYCHOLOGY
-- Trading readiness
-- Score
-- پیشنهاد Trade / No Trade بر اساس self-assessment
-- هدف ابزار مدیریت ریسک است، نه تشخیص پزشکی
-
-AI ANALYSIS
-در آینده:
-- کاربر تحلیل خودش را ارسال کند
-- سیستم تحلیل کمکی خودش را ارائه دهد
-
-ADMIN
-در آینده:
-- Statistics
-- Users
-- Ban/Unban
-- VIP
-- Signals
-- Payments
-- Discounts
-- Points
-- Performance
-- Broadcast
-- News
-- Watchlists
-- System Configuration
-- Audit Log
-
-OTHER
-- Education
-- Support
-- Cooperation
-- About
-- Website
-- YouTube
-- Instagram
-- X
-- WhatsApp
-- Our Exchanges
-
-در آینده Website و Telegram Bot باید از Backend مشترک استفاده کنند.
+Worker approximately every 30 seconds.
 
 
-==================================================
-4. CURRENT PROJECT STRUCTURE
-==================================================
+========================================
+ALERT CENTER
+========================================
 
-ساختار مهم فعلی تقریباً:
+Advanced Alert system implemented.
 
-app/
+Alert types:
 
-bot/
-- admin_handlers.py
-- alert_handlers.py
-- general_handlers.py
-- language_handlers.py
-- market_handlers.py
-- module_router.py
-- navigation.py
-- psychology_handlers.py
-- register_handlers.py
-- session_handlers.py
-- welcome_handlers.py
+Price Above
+Price Below
 
-core/
-- config.py
-- plan_limits.py
+Custom EMA Bull Cross
+Custom EMA Bear Cross
 
-engines/
+Custom RSI Above
+Custom RSI Below
 
-alerts/
-- alert_worker.py
-- market_alert_engine.py
+MACD Bull
+MACD Bear
 
-exchange/
-- __init__.py
+Volume Spike (Crypto only)
 
-market_data/
-- crypto.py
-- forex.py
-- service.py
-- twelve_data.py
+ATR Above
+ATR Below
 
-news/
-- __init__.py
-
-payments/
-- __init__.py
-
-psychology/
-- readiness_engine.py
-
-sessions/
-- alert_engine.py
-- session_engine.py
-
-signals/
-- __init__.py
-
-i18n/
-- translations.py
-
-models/
-- alert.py
-- database.py
-- discount.py
-- payment.py
-- performance.py
-- psychology.py
-- user.py
-
-services/
-- alert_service.py
-- psychology_service.py
-- user_service.py
-
-main.py
-
-
-==================================================
-5. MAIN.PY CURRENTLY CONNECTED
-==================================================
-
-قابلیت‌هایی که در نسخه اجرایی main.py متصل هستند:
-
-- /start
-- User creation/retrieval
-- Referral argument detection
-- Ban check
-- Required Telegram channel membership
-- Welcome
-- Language
-- Market
-- Sessions
-- Psychology
-- Alert Center
-- Account
-
-Background workers:
-
-Session Alert Worker:
-تقریباً هر 30 ثانیه
-
-Market Alert Worker:
-تقریباً هر 60 ثانیه
-
-مواردی که در نسخه‌ای که بررسی شد هنوز به صورت کامل به Main Menu متصل نبودند:
-
-- Signals
-- Watchlist
-- News
-- Analysis
-- Trader
-- Exchange Connection
-- VIP/Payment
-- Referral/Rewards
-- Performance
-- Education
-- Support
-- About
-- Admin واقعی
-
-وجود فایل یک Module لزوماً به معنی تکمیل قابلیت نیست.
-
-
-==================================================
-6. ALERT CENTER — CURRENT STATUS
-==================================================
-
-Alert Center قابلیت‌های اصلی زیر را دارد:
-
-- Create Alert
-- My Alerts
-- Toggle
-- Delete
-- Guide
-- Test Notification
-
-Plan Limits:
-
-NORMAL:
-5 Active Alerts
-
-VIP:
-50 Active Alerts
-
-ADMIN:
-Unlimited
-
-ده Crypto فعلی:
-
-BTC/USDT
-ETH/USDT
-BNB/USDT
-SOL/USDT
-XRP/USDT
-DOGE/USDT
-ADA/USDT
-TRX/USDT
-LINK/USDT
-AVAX/USDT
+ATR% Above
+ATR% Below
 
 Timeframes:
 
@@ -428,468 +223,978 @@ Timeframes:
 4h
 1d
 
+EMA rules:
 
-==================================================
-7. ALERT DATABASE UPGRADE ALREADY DONE
-==================================================
+User can enter any two periods.
 
-Model:
-
-app/models/alert.py
-
-به MarketAlert ستون جدید اضافه شده:
-
-parameters
-
-نوع آن:
-Text
-
-هدف:
-ذخیره JSON تنظیمات اختصاصی هر Alert.
-
-Database Migration روی SQLite واقعی انجام شده است.
-
-قبل Migration ستون‌های market_alerts:
-
-id
-telegram_id
-symbol
-alert_type
-timeframe
-target_value
-is_active
-last_state
-last_triggered_at
-trigger_count
-created_at
-
-بعد Migration:
-
-parameters
-
-هم اضافه شده است.
-
-Backup قبل از Upgrade:
-
-data/trading_assistant_before_alert_upgrade.db
-
-
-==================================================
-8. ALERT SERVICE ALREADY UPGRADED
-==================================================
-
-فایل:
-
-app/services/alert_service.py
-
-create_alert اکنون parameters را قبول می‌کند.
-
-Signature:
-
-(telegram_id, symbol, alert_type, timeframe='1h', target_value=None, parameters=None)
-
-parameters به JSON تبدیل و داخل MarketAlert.parameters ذخیره می‌شود.
-
-قابلیت‌های قبلی حفظ شده‌اند:
-
-- AlertLimitReached
-- plan detection
-- active alert count
-- capacity
-- Normal/VIP/Admin limits
-- create
-- list
-- active alerts
-- toggle
-- delete
-- update state
-- mark triggered
-
-
-==================================================
-9. ALERT ENGINE ALREADY UPGRADED
-==================================================
-
-فایل:
-
-app/engines/alerts/market_alert_engine.py
-
-Market data:
-Binance via ccxt async
-
-Indicators currently supported:
-
-PRICE
-
-EMA custom
-
-RSI custom
-
-MACD
-
-Volume
-
-ATR
-
-ATR%
-
-Engine از parameters پشتیبانی می‌کند.
-
-EMA:
-ema_fast
-ema_slow
-
-RSI:
-rsi_period
-value
-
-ATR:
-atr_period
-value
-
-Volume:
-volume_period
-multiplier
-
-ATR% formula:
-
-ATR / PRICE * 100
-
-Engine با Market Data واقعی BTC/USDT تست شده و خروجی صحیح داده است.
-
-Test شامل:
-- Price
-- EMA
-- RSI
-- MACD
-- ATR
-- ATR%
-- Volume
-
-Import نیز بدون خطا بوده است.
-
-
-==================================================
-10. CUSTOM EMA — IMPORTANT
-==================================================
-
-این تصمیم قطعی محصول است:
-
-EMA نباید فقط EMA20/50 باشد.
-
-کاربر باید بتواند دو عدد دلخواه وارد کند.
-
-مثال:
-
-7 25
-9 21
-20 50
-50 200
-99 150
-
-قانون:
-
-Minimum EMA Period:
+Minimum:
 2
 
-Maximum EMA Period:
+Maximum:
 200
 
-عدد بالاتر از 200 قبول نشود.
+Examples:
 
-اگر کاربر:
+7 25
+9 99
+50 200
 
+Equal periods invalid.
+
+If entered reversed:
 25 7
 
-وارد کرد، سیستم می‌تواند آن را مرتب کند:
+system can normalize:
 
-Fast = 7
-Slow = 25
-
-دو عدد برابر قبول نشوند.
-
-مثال نامعتبر:
-
-20 20
-
-EMA Alert Types:
-
-Bull Cross
-Bear Cross
+Fast 7
+Slow 25
 
 
-==================================================
-11. ALERT HANDLER CURRENT UPGRADE
-==================================================
+========================================
+ALERT DATABASE
+========================================
 
-فایل:
+MarketAlert has:
 
-app/bot/alert_handlers.py
+parameters TEXT
 
-نسخه کامل آن در آخرین مرحله جایگزین شد.
+parameters stores JSON.
 
-UI جدید شامل:
+Existing DB was migrated safely.
 
-Price Above
-Price Below
+Backup was created before Alert migration.
 
-EMA Bull Cross
-EMA Bear Cross
+Examples:
 
-RSI Above
-RSI Below
+EMA:
+{
+ "ema_fast":7,
+ "ema_slow":25
+}
 
-MACD Bull
-MACD Bear
+RSI:
+{
+ "rsi_period":14,
+ "value":70
+}
 
-Volume Spike
-
-ATR Above
-ATR Below
-
-ATR% Above
-ATR% Below
-
-
-Custom EMA input:
-
-مثال:
-7 25
-
-محدوده:
-2 تا 200
-
-Custom RSI:
-
-مثال:
-14 70
-
-Custom ATR:
-
-مثال:
-14 500
-
-Custom ATR%:
-
-مثال:
-14 2.5
-
-Custom Volume:
-
-مثال:
-2.5
+Forex:
+{
+ "market":"forex"
+}
 
 
-==================================================
-12. TEST STATUS
-==================================================
+========================================
+CRYPTO ALERTS
+========================================
 
-Syntax تست شده با:
+Provider:
+XT via CCXT
 
-venv\Scripts\python.exe -m py_compile ...
+Search supports arbitrary XT Spot/USDT symbols.
 
-و بدون Error بوده است.
+Examples:
 
-EMA Custom داخل Telegram تست شده است.
+BTC
+PEPE
+SUI
+PEPE/USDT
 
-Test:
-
-BTC/USDT
-→ EMA Bull Cross
-→ 7 25
-→ Timeframe
-→ Create
-
-نتیجه:
-EMA CUSTOM OK
-
-کاربر تأیید کرده:
-
-"EMA اوکیه"
+Search validates symbol before Alert creation.
 
 
-==================================================
-13. SECURITY / IMPORTANT RULES
-==================================================
+========================================
+CRYPTO SEARCH QUOTA
+========================================
 
-BOT_TOKEN و API KEYها داخل .env باشند.
+Database model:
+SearchUsage
 
-.env هرگز:
-- Git Commit نشود
-- داخل Chat ارسال نشود
-- Public نشود
+Normal:
+3 successful Crypto searches per calendar month
 
-Wallet Private Key کاربر نباید ذخیره شود.
+VIP:
+Unlimited
 
-برای Payments ترجیحاً Blockchain confirmation / Payment Processor استفاده شود.
+Admin:
+Unlimited
 
-اطلاعات شخصی کاربران فقط در حد نیاز جمع‌آوری شود.
+Important:
 
-SQLite برای Development فعلی مناسب است.
+FAILED search does NOT consume quota.
 
-برای Production:
-PostgreSQL + Migration
+Successful custom Crypto search consumes quota.
 
-برای اجرای دائمی:
-VPS / Cloud
+Quick/default symbols should not consume custom Search quota.
 
-برای Source Backup:
+Admin ID:
+1432178804
+
+Admin currently shows unlimited.
+
+
+========================================
+FOREX ALERTS
+========================================
+
+Provider:
+Twelve Data
+
+File:
+app/engines/alerts/forex_provider.py
+
+Historical Forex candles tested successfully.
+
+Example test:
+
+EUR/USD
+1H
+250 candles
+
+Result was successful.
+
+Example observed:
+LAST 1.15634
+
+Forex search supports:
+
+EUR/USD
+GBP/JPY
+etc.
+
+Both formats supported:
+
+GBPJPY
+GBP/JPY
+
+Forex supports:
+
+Price
+EMA
+RSI
+MACD
+ATR
+ATR%
+
+Volume Spike intentionally NOT enabled for Spot Forex because centralized real volume is unavailable.
+
+
+========================================
+DUAL ALERT ENGINE
+========================================
+
+Unified Alert engine supports:
+
+Crypto → XT
+Forex → Twelve Data
+
+Both real market tests passed.
+
+Market Alert Worker exists and runs periodically.
+
+
+========================================
+REFERRAL & POINTS
+========================================
+
+Implemented.
+
+Every user gets unique:
+
+ALIFT-XXXXXXXX
+
+Referral URL format:
+
+https://t.me/Alift_trader_bot?start=ALIFT-...
+
+Tables:
+
+referral_rewards
+point_transactions
+
+Current referral reward:
+
++10 points per successful referral.
+
+Protections:
+
+Only new account
+No duplicate reward
+No self-referral
+One reward per referred user
+
+UI implemented:
+
+Referral link
+Successful invites
+Points
+Point history
+Rewards information
+
+
+========================================
+SUPPORT
+========================================
+
+Real Ticket System implemented.
+
+Models:
+
+SupportTicket
+SupportMessage
+
+Features:
+
+Create Ticket
+Categories
+User Tickets
+Conversation
+User Reply
+Close Ticket
+
+Maximum:
+3 concurrent open tickets per user
+
+Admin side includes:
+
+Open Tickets
+View
+Reply
+Close
+
+Admin reply can notify user via Telegram.
+
+
+========================================
+ABOUT
+========================================
+
+About module implemented.
+
+Includes:
+
+Project description
+Mission
+Features
+Website placeholder
+Social
+Support
+Cooperation
+Privacy
+Terms
+Risk disclaimer
+
+Future:
+
+Website
+Android
+iOS
+
+
+========================================
+EXCHANGE HUB
+========================================
+
+Implemented Exchange referral hub.
+
+Current Exchanges:
+
+XT
+Referral Code:
+LYR54K
+
+URL:
+https://www.xt.com/ref/LYR54K
+
+
+Bitunix
+Referral Code:
+EIrZDA
+
+URL:
+https://www.bitunix.com/register?inviteCode=EIrZDA&t_act=-1
+
+
+LBank
+Referral Code:
+61GTN
+
+URL:
+https://www.lbank.com/ref/61GTN
+
+
+XT Referral QR image:
+
+assets/xt_referral.png
+
+Exchange Hub supports:
+
+Exchange Cards
+Referral Code
+Registration Button
+Security Guide
+QR/image when available
+
+
+========================================
+PERFORMANCE CENTER
+========================================
+
+Model already existed:
+
+MonthlyPerformance
+
+Fields include:
+
+year
+month
+signal_type
+total_signals
+wins
+losses
+breakeven
+return_percent
+updated_at
+
+New:
+
+performance_service.py
+performance_handlers.py
+
+UI:
+
+Current Month
+Previous Months
+All Time
+
+Displays:
+
+Signals
+Wins
+Losses
+Breakeven
+Win Rate
+Recorded Return
+
+IMPORTANT:
+
+Do NOT create fake performance.
+
+Only real stored Signal results must be shown.
+
+Signal Engine will feed Performance later.
+
+
+========================================
+ADMIN PANEL
+========================================
+
+Real Admin Panel built.
+
+Admin ID:
+1432178804
+
+Features:
+
+Dashboard
+Users
+Search User
+User Detail
+Give VIP +30 days
+Custom VIP duration
+Remove VIP
+Ban
+Unban
+Change Points
+Support Tickets
+Ticket Reply
+Broadcast
+Audit Log
+
+Database:
+
+admin_audit_logs
+
+Admin Dashboard includes:
+
+Users
+Active Users
+Banned
+VIP
+Alerts
+Active Alerts
+Referrals
+Searches
+Open Support Tickets
+
+
+========================================
+PAYMENT / VIP
+========================================
+
+Payment system substantially implemented.
+
+VIP prices:
+
+30 days = 10 USDT
+90 days = 27 USDT
+180 days = 50 USDT
+365 days = 80 USDT
+
+
+Crypto destinations:
+
+BTC / Bitcoin:
+bc1qqdumgvslv9kxak8mdxrjvmen3gq9q00ch8egt7
+
+BNB / BSC BEP20:
+0xB7b1d0243ad2c11CA7a680E33be8BD1F92233fEA
+
+SOL / Solana:
+A8YPCXEEQvZQHxTXroG8kHb4odP4BrAFGSkmbbFhQspa
+
+TRX / TRON:
+TJpmauXS4E9iF1mfUtSUQewLEREeFXxMxp
+
+USDT / TRC20:
+TJpmauXS4E9iF1mfUtSUQewLEREeFXxMxp
+
+
+Bank cards:
+
+ملل
+6062561023546123
+Owner:
+علیرضا افتخاری
+
+مهر
+6063731079881364
+Owner:
+علیرضا افتخاری
+
+تجارت
+5859831836736420
+Owner:
+علیرضا افتخاری
+
+رفاه
+5894631194233193
+Owner:
+علیرضا افتخاری
+
+سینا
+6393461067343968
+Owner:
+علیرضا افتخاری
+
+Backup Blu Bank:
+6219861926000646
+Owner:
+فاطمه نصراللهی
+
+Old invalid 17-digit Blu number must NOT be used.
+
+
+Payment DB was upgraded.
+
+Backup:
+
+data/trading_assistant_before_payment_upgrade.db
+
+Payment supports:
+
+payment_method
+plan_days
+plan_price
+destination
+details
+reviewed_by
+reviewed_at
+
+Existing:
+
+asset
+network
+amount
+txid
+status
+created_at
+
+
+Payment Service built.
+
+Supports:
+
+Crypto payment registration
+Bank payment registration
+Duplicate TXID/reference prevention
+Pending
+Confirmed
+Rejected
+Payment history
+Admin approve
+Admin reject
+
+VIP activation happens only after Admin approval.
+
+Repeat approve must NOT activate VIP twice.
+
+Admin Payment Handler built.
+
+User Payment Handler built.
+
+Copy buttons:
+Attempt Telegram CopyTextButton when supported.
+Fallback is selectable text.
+
+IMPORTANT SECURITY:
+
+Never request:
+
+Seed Phrase
+Private Key
+Wallet Password
+Exchange Password
+Bank Password
+
+
+========================================
+MARKET INTELLIGENCE
+========================================
+
+Models created:
+
+AssetMarketSnapshot
+ExchangeFlowSnapshot
+WhaleTransfer
+
+XT Market Scanner built.
+
+Real data:
+
+Top Gainers
+Top Losers
+Volume Leaders
+Market Breadth
+
+Market Intelligence Handler built.
+
+Market menu was modified to include:
+
+🌊 هوش و جریان بازار
+
+Important:
+
+Volume is NOT Exchange Flow.
+
+Never infer Inflow/Outflow from trading volume.
+
+Exchange Inflow/Outflow requires a real On-chain provider.
+
+No CryptoQuant/Glassnode API key currently available.
+
+Do NOT fabricate Flow numbers.
+
+Flow architecture/database is prepared for future provider.
+
+
+========================================
+NEWS VISION
+========================================
+
+This is the CURRENT DEVELOPMENT AREA.
+
+User wants News Center to automatically provide the newest important information in PERSIAN.
+
+Categories:
+
+Crypto News
+Forex News
+Fundamental/Macro
+Gold
+Oil
+Listings/Delistings
+Breaking News
+
+Admin must also be able to:
+
+Add News manually
+Edit
+Delete
+Publish/Unpublish
+Mark Breaking
+Change Importance
+Broadcast important news
+
+News should contain:
+
+Persian title/summary
+Original source
+Original URL
+Published time
+Importance
+
+Do not copy full copyrighted articles.
+
+Use:
+Title
+Short generated/translated summary
+Source
+Original link
+
+
+========================================
+ECONOMIC CALENDAR
+========================================
+
+This is the EXACT CURRENT DEVELOPMENT POINT.
+
+User wants:
+
+CPI
+NFP
+FOMC
+Interest Rate Decisions
+PPI
+GDP
+Unemployment
+PCE
+Retail Sales
+Central Bank events
+Important speeches
+
+Features required:
+
+Event time
+Country
+Currency
+Importance
+Previous
+Forecast
+Actual
+
+Countdown example:
+
+🔴 US CPI
+⏳ 02:14:32 until release
+
+After release:
+
+Actual
+Forecast
+Previous
+Deviation
+
+Potentially affected markets:
+
+USD
+Forex
+BTC/Crypto
+Gold
+
+Interpretation must be presented as interpretation, NOT guaranteed market direction.
+
+Event times should be stored in UTC.
+
+Display should support Tehran/user timezone.
+
+
+========================================
+ECONOMIC CALENDAR IMPLEMENTED SO FAR
+========================================
+
+Model created:
+
+app/models/economic_event.py
+
+Table:
+economic_events
+
+Service created:
+
+app/services/economic_calendar_service.py
+
+Functions include:
+
+detect_importance
+countdown
+upcoming_events
+next_important_event
+recent_events
+get_event
+create_event
+update_actual
+delete_event
+
+Countdown tested successfully.
+
+Provider interface created:
+
+app/engines/news/economic_calendar_provider.py
+
+Economic Calendar Provider abstract interface exists.
+
+
+========================================
+TWELVE DATA CALENDAR TEST
+========================================
+
+Twelve Data was tested for:
+
+https://api.twelvedata.com/economic_calendar
+
+Result:
+
+HTTP 404
+Content-Type: text/plain
+404 page not found
+
+CONCLUSION:
+
+Do NOT use that endpoint.
+
+Twelve Data remains for Forex Market Data.
+
+Economic Calendar needs a separate provider.
+
+
+========================================
+CURRENT PROVIDER RESEARCH
+========================================
+
+Trading Economics was considered for Economic Calendar.
+
+User opened:
+
+https://tradingeconomics.com/api/
+
+They saw:
+
+API Docs
+Code Examples
 GitHub
+Pypi
+npm
+Excel
+Tableau
+Matlab
+Docker
+API Status
+ChangeLog
+Support
+
+User was instructed to open API Docs and look for Economic Calendar.
+
+No Trading Economics API credential has been configured yet.
+
+DO NOT assume a key exists.
+
+If Trading Economics requires an unsuitable paid subscription, do not ask user to purchase immediately.
+
+Evaluate another permitted API/feed provider.
 
 
-==================================================
-14. DEVELOPMENT METHOD
-==================================================
+========================================
+MARKET / NEWS FUTURE
+========================================
 
-پروژه را از صفر بازسازی نکن.
+News module should eventually have three engines:
 
-هر بار فقط Module فعلی را تکمیل کن.
+1. News Collector
+2. Economic Calendar Engine
+3. Market Intelligence / Flow Engine
 
-ترتیب:
+Future News Worker should run 24/7 on VPS.
 
-Implement
-→ Syntax Test
-→ Runtime Test
-→ Telegram Test
-→ Git Commit
-→ Next Module
+Potential behavior:
 
-اگر یک قابلیت سالم است، بی‌دلیل Refactor نکن.
+Fetch
+→ Deduplicate
+→ Categorize
+→ Translate/Summarize Persian
+→ Importance
+→ Store
+→ Telegram/Web/App
 
-قبل تغییر Database:
-Backup
-
-بعد Module مهم:
-Git Commit/Push
-
-در بررسی فایل‌ها از ارسال صدها خط کد در Chat اجتناب کن.
-
-در صورت نیاز از CMD استفاده کن:
-
-inspect.signature()
-
-findstr
-
-py_compile
-
-git diff
-
-git status
+Breaking News should be selective to avoid spam.
 
 
-==================================================
-15. NEXT STEP — START HERE
-==================================================
+========================================
+IMPORTANT ARCHITECTURE PRINCIPLES
+========================================
 
-نقطه دقیق ادامه پروژه اینجاست:
+Keep providers replaceable.
 
-ALERT CENTER تقریباً تکمیل شده و Custom EMA با موفقیت تست شده است.
+Examples:
 
-اول تست نهایی کوتاه Alert Center انجام شود:
+Crypto Provider:
+XT
 
-1. Price Above/Below
-2. EMA Custom
-3. RSI Custom
-4. MACD
-5. Volume Custom
-6. ATR
-7. ATR%
-8. My Alerts
-9. Toggle
-10. Delete
-11. Alert Limit
-12. Worker Trigger
+Forex Provider:
+Twelve Data
 
-اگر تست نهایی Alert Center صحیح بود:
+Economic Calendar Provider:
+Separate provider
 
+On-chain Flow Provider:
+Future provider
+
+Do not tie business logic directly to Telegram.
+
+Do not fabricate market data.
+
+Do not fake Performance.
+
+Do not infer On-chain Flow from Volume.
+
+
+========================================
+MAIN / ROUTING NOTE
+========================================
+
+main.py has grown large because many handlers are registered there.
+
+Current connected modules include approximately:
+
+Language
+Market
+Sessions
+Psychology
+Alerts
+Asset Search
+Referral
+Support
+About
+Exchange Hub
+Performance
+Admin
+
+Payment was being connected through connect_payment.py.
+
+Market Intelligence handler exists but its callback connection to main.py was still intended to be finalized along with News routing.
+
+Future recommendation:
+Refactor handler registration out of main.py to reduce repeated rewrites.
+
+Do this carefully; do NOT break currently working modules.
+
+
+========================================
+FILES ADDED/CHANGED IN RECENT DEVELOPMENT
+========================================
+
+Important newer files include:
+
+app/models/referral.py
+app/models/support.py
+app/models/search_usage.py
+app/models/admin_audit.py
+app/models/news.py
+app/models/economic_event.py
+app/models/market_intelligence.py
+
+app/services/referral_service.py
+app/services/support_service.py
+app/services/search_limit_service.py
+app/services/asset_search_service.py
+app/services/forex_search_service.py
+app/services/admin_service.py
+app/services/performance_service.py
+app/services/payment_service.py
+app/services/economic_calendar_service.py
+
+app/engines/alerts/symbol_search.py
+app/engines/alerts/forex_provider.py
+app/engines/market_intelligence.py
+app/engines/news/economic_calendar_provider.py
+
+app/bot/referral_handlers.py
+app/bot/support_handlers.py
+app/bot/about_handlers.py
+app/bot/alert_asset_handlers.py
+app/bot/intelligence_handlers.py
+app/bot/performance_handlers.py
+app/bot/admin_payment_handlers.py
+
+Payment handler exists:
+app/bot/payment_handlers.py
+
+
+========================================
+NEXT STEP — START EXACTLY HERE
+========================================
+
+DO NOT restart project planning.
+
+Continue from Economic Calendar Provider.
+
+Immediate task:
+
+1. Select/test a REAL Economic Calendar provider that can supply:
+   - event time
+   - importance
+   - country/currency
+   - previous
+   - forecast
+   - actual
+
+2. Trading Economics API is currently being investigated.
+   No key confirmed yet.
+
+3. If Trading Economics is unsuitable/paid-only for our needs:
+   choose another legitimate provider/API/feed.
+
+4. Implement provider using:
+   app/engines/news/economic_calendar_provider.py
+
+5. Normalize provider data and write events into:
+   EconomicEvent
+
+6. Build automatic sync/update of Actual values.
+
+7. Build Persian Economic Calendar UI.
+
+8. Implement countdown:
+   24h
+   1h
+   15m
+   5m
+   release alert
+
+9. Then build News Collector:
+   Crypto
+   Forex
+   Fundamental
+   Gold/Oil
+   Listings
+
+10. Build Persian translation/summarization layer.
+
+11. Build Admin News Manager:
+   Add
+   Edit
+   Delete
+   Publish
+   Breaking
+   Broadcast
+
+12. Connect News + Economic Calendar + Market Intelligence callbacks cleanly.
+
+After completing News:
 Git Commit + Push
-
-سپس مستقیم برو به:
-
-REAL ADMIN PANEL
-
-قابلیت‌های Admin Panel:
-
-1. Dashboard / Statistics
-2. Users
-3. User Search
-4. User Detail
-5. Give VIP
-6. Remove VIP
-7. VIP Expiration
-8. Ban
-9. Unban
-10. Add/Remove Points
-11. Discount Codes
-12. Payments
-13. Broadcast
-14. Signals Management
-15. Watchlist Management
-16. News Management
-17. Performance
-18. System Configuration
-19. Audit Log
-
-Admin Panel فقط برای Telegram IDs موجود در ADMIN_IDS قابل دسترسی باشد.
-
-بعد از Admin Panel، اولویت تقریبی:
-
-Signals Engine
-→ Watchlist
-→ News
-→ Payment/VIP
-→ Referral
-→ AI Analysis
-→ Website/API
-→ PostgreSQL
-→ VPS/24x7 Production Deployment
+Update this HANDOFF again.
 
 
-==================================================
-16. INSTRUCTION TO THE NEW AI SESSION
-==================================================
+========================================
+FIRST RESPONSE REQUIRED FROM NEW AI
+========================================
 
-تو ادامه‌دهنده توسعه همین پروژه هستی.
+After reading this file, do NOT ask me to explain the project.
 
-این Handoff را حافظه پایه پروژه در نظر بگیر.
+Respond approximately:
 
-از من نخواه پروژه را از ابتدا توضیح بدهم.
+"اطلاعات ALIFT TRADER دریافت شد. نقطه ادامه مشخص است: اتصال یک Provider واقعی Economic Calendar و سپس News فارسی. پروژه از صفر ساخته نمی‌شود."
 
-از من نخواه کل چت قبلی را Paste کنم.
-
-قابلیت‌هایی را که در این Handoff تأیید شده‌اند دوباره از صفر نساز.
-
-اگر برای NEXT STEP اطلاعات کافی داری، سؤال مقدماتی نپرس.
-
-مستقیماً بگو:
-
-"اطلاعات پروژه دریافت شد. نقطه ادامه مشخص است: تکمیل تست Alert Center و سپس Admin Panel."
-
-سپس اولین دستور عملی موردنیاز را بده.
-
-اگر برای یک تغییر مشخص واقعاً نیاز به دیدن کدی داری، فقط همان فایل یا بخش ضروری را درخواست کن؛ نه کل پروژه.
-
-تا حد ممکن مصرف Token را پایین نگه دار و Context پروژه را حفظ کن.
-
-FINAL ARCHITECTURE REQUIREMENT
-
-ALIFT TRADER must be designed so the core business logic is not coupled to Telegram.
-
-Telegram Bot is only one client/interface.
-
-Core engines and services must be reusable by:
-- Telegram
-- Website
-- Android
-- iOS
-
-Future architecture:
-Clients
-→ REST/WebSocket API
-→ Backend Services/Engines
-→ PostgreSQL / Cache / Workers
-
-Android and iOS must be buildable later without rewriting the trading engines, alerts, signals, users, payments, psychology, news, and watchlist logic.
-
+Then give ONLY the first practical next step.
 
 END OF HANDOFF

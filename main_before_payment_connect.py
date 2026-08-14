@@ -147,17 +147,6 @@ from app.bot.performance_handlers import (
     performance_home,
 )
 
-from app.bot.payment_handlers import (
-    payment_callback,
-    payment_home,
-    payment_message,
-)
-
-from app.bot.admin_payment_handlers import (
-    admin_payment_callback,
-    admin_payments_home,
-)
-
 
 # ============================================================
 # BACKGROUND ENGINES
@@ -693,19 +682,6 @@ async def menu_router(
         return
 
     # --------------------------------------------------------
-    # PAYMENT INPUT
-    # --------------------------------------------------------
-
-    handled = await payment_message(
-        update,
-        context,
-    )
-
-    if handled:
-        return
-
-
-    # --------------------------------------------------------
     # SUPPORT INPUT
     # --------------------------------------------------------
 
@@ -879,23 +855,6 @@ async def menu_router(
         return
 
     # --------------------------------------------------------
-    # VIP / PAYMENT
-    # --------------------------------------------------------
-
-    if text == t(
-        language,
-        "vip",
-    ):
-
-        await payment_home(
-            update,
-            context,
-        )
-
-        return
-
-
-    # --------------------------------------------------------
     # PERFORMANCE
     # --------------------------------------------------------
 
@@ -963,6 +922,10 @@ async def menu_router(
 
         "exchange":
             "🔗 EXCHANGE CONNECTION",
+
+        "vip":
+            "💎 ALIFT VIP & PAYMENT",
+
         "education":
             "🎓 ALIFT EDUCATION",
     }
@@ -1042,15 +1005,6 @@ def build_application():
             start,
         )
     )
-
-    # ADMIN PAYMENT COMMAND
-    application.add_handler(
-        CommandHandler(
-            "payments",
-            admin_payments_home,
-        )
-    )
-
 
     # MEMBERSHIP
     application.add_handler(
@@ -1147,23 +1101,6 @@ def build_application():
             pattern="^performance_",
         )
     )
-
-    # PAYMENT
-    application.add_handler(
-        CallbackQueryHandler(
-            payment_callback,
-            pattern="^payment_",
-        )
-    )
-
-    # ADMIN PAYMENT
-    application.add_handler(
-        CallbackQueryHandler(
-            admin_payment_callback,
-            pattern="^adminpay_",
-        )
-    )
-
 
     # ADMIN
     application.add_handler(
