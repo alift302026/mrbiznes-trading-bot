@@ -42,3 +42,8 @@ Thumbs.db
 project_tree.txt
 project_files.txt
 *.tmp
+*.bak
+alift-home-preview.html
+alift-landing-v2.html
+alift-theme-3.html
+.env

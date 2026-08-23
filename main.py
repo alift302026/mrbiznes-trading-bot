@@ -167,6 +167,10 @@ from app.engines.sessions.alert_engine import (
     session_alert_job,
 )
 
+from app.engines.news.economic_calendar_worker import (
+    economic_calendar_sync_job,
+)
+
 from app.engines.alerts.alert_worker import (
     market_alert_job,
 )
@@ -1223,6 +1227,19 @@ def build_application():
 
         logger.info(
             "Market Alert Worker: ON"
+        )
+
+    # ECONOMIC CALENDAR WORKER
+    if application.job_queue is not None:
+        application.job_queue.run_repeating(
+            economic_calendar_sync_job,
+            interval=900,
+            first=20,
+            name="economic-calendar-sync-worker",
+        )
+
+        logger.info(
+            "Economic Calendar Worker: ON"
         )
 
     return application
