@@ -90,6 +90,11 @@ from app.bot.navigation import (
     main_menu,
 )
 
+from app.bot.signal_handlers import (
+    signal_center,
+    signal_callback,
+)
+
 from app.bot.session_handlers import (
     session_callback,
     sessions_page,
@@ -980,6 +985,13 @@ async def menu_router(
             key,
         ):
 
+            if key == "signals":
+                await signal_center(
+                    update,
+                    context,
+                )
+                return
+
             await temporary_module(
                 update,
                 user,
@@ -1183,6 +1195,14 @@ def build_application():
             filters.TEXT
             & ~filters.COMMAND,
             menu_router,
+        )
+    )
+
+    # SIGNAL CENTER
+    application.add_handler(
+        CallbackQueryHandler(
+            signal_callback,
+            pattern=r"signal_",
         )
     )
 

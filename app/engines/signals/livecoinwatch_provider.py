@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -9,11 +11,14 @@ TIMEOUT = 20
 
 
 class LiveCoinWatchError(RuntimeError):
-    """Raised when LiveCoinWatch cannot provide valid market data."""
+    pass
 
 
 def _api_key() -> str:
-    key = os.getenv("LIVECOINWATCH_API_KEY", "").strip()
+    key = os.getenv(
+        "LIVECOINWATCH_API_KEY",
+        "",
+    ).strip()
 
     if not key:
         raise LiveCoinWatchError(
@@ -30,12 +35,13 @@ def _headers() -> Dict[str, str]:
     }
 
 
-def _post(endpoint: str, payload: Dict[str, Any]) -> Any:
-    url = f"{BASE_URL}{endpoint}"
-
+def _post(
+    endpoint: str,
+    payload: Dict[str, Any],
+) -> Any:
     try:
         response = requests.post(
-            url,
+            f"{BASE_URL}{endpoint}",
             headers=_headers(),
             json=payload,
             timeout=TIMEOUT,
@@ -46,10 +52,10 @@ def _post(endpoint: str, payload: Dict[str, Any]) -> Any:
         ) from exc
 
     if response.status_code != 200:
-        message = response.text[:500]
-
         raise LiveCoinWatchError(
-            f"LiveCoinWatch HTTP {response.status_code}: {message}"
+            "LiveCoinWatch HTTP "
+            f"{response.status_code}: "
+            f"{response.text[:500]}"
         )
 
     try:
@@ -65,31 +71,15 @@ def _normalize_code(code: str) -> str:
 
     if "/" in value:
         value = value.split("/", 1)[0]
-
-    if value.endswith("USDT") and "/" not in str(code):
+    elif value.endswith("USDT"):
         value = value[:-4]
 
     if not value:
-        raise ValueError("Coin code is required")
+        raise ValueError(
+            "Coin code is required"
+        )
 
     return value
-
-
-def _delta_percent(value: Any) -> Optional[float]:
-    """
-    LiveCoinWatch delta values are multipliers.
-
-    Example:
-        1.05 -> +5%
-        0.97 -> -3%
-    """
-    if value is None:
-        return None
-
-    try:
-        return (float(value) - 1.0) * 100.0
-    except (TypeError, ValueError):
-        return None
 
 
 def _number(value: Any) -> Optional[float]:
@@ -102,29 +92,63 @@ def _number(value: Any) -> Optional[float]:
         return None
 
 
+def _delta_percent(
+    value: Any,
+) -> Optional[float]:
+    value = _number(value)
+
+    if value is None:
+        return None
+
+    # LiveCoinWatch delta is a multiplier.
+    # 1.05 = +5%, 0.97 = -3%.
+    return (value - 1.0) * 100.0
+
+
 def _normalize_coin(
     data: Dict[str, Any],
     fallback_code: Optional[str] = None,
 ) -> Dict[str, Any]:
     delta = data.get("delta") or {}
 
-    code = data.get("code") or fallback_code
+    code = (
+        data.get("code")
+        or fallback_code
+    )
 
     return {
         "provider": "livecoinwatch",
-        "code": _normalize_code(code) if code else None,
+        "code": (
+            _normalize_code(code)
+            if code
+            else None
+        ),
         "name": data.get("name"),
         "rank": data.get("rank"),
-        "price_usd": _number(data.get("rate")),
-        "volume_24h_usd": _number(data.get("volume")),
-        "market_cap_usd": _number(data.get("cap")),
-        "liquidity_usd": _number(data.get("liquidity")),
+        "price_usd": _number(
+            data.get("rate")
+        ),
+        "volume_24h_usd": _number(
+            data.get("volume")
+        ),
+        "market_cap_usd": _number(
+            data.get("cap")
+        ),
+        "liquidity_usd": _number(
+            data.get("liquidity")
+        ),
         "circulating_supply": _number(
             data.get("circulatingSupply")
         ),
-        "total_supply": _number(data.get("totalSupply")),
-        "max_supply": _number(data.get("maxSupply")),
-        "ath_usd": _number(data.get("allTimeHighUSD")),
+        "total_supply": _number(
+            data.get("totalSupply")
+        ),
+        "max_supply": _number(
+            data.get("maxSupply")
+        ),
+        "ath_usd": _number(
+            data.get("allTimeHighUSD")
+        ),
         "exchanges": data.get("exchanges"),
         "markets": data.get("markets"),
         "pairs": data.get("pairs"),
@@ -153,46 +177,38 @@ def get_coin(
     code: str,
     meta: bool = True,
 ) -> Dict[str, Any]:
-    """
-    Fetch detailed LiveCoinWatch context for one crypto asset.
-    """
-    normalized_code = _normalize_code(code)
+    normalized = _normalize_code(code)
 
     data = _post(
         "/coins/single",
         {
             "currency": "USD",
-            "code": normalized_code,
+            "code": normalized,
             "meta": bool(meta),
         },
     )
 
     if not isinstance(data, dict):
         raise LiveCoinWatchError(
-            "Unexpected response for single coin"
+            "Unexpected single coin response"
         )
 
     return _normalize_coin(
         data,
-        fallback_code=normalized_code,
+        fallback_code=normalized,
     )
 
 
 def get_coins(
     codes: Iterable[str],
 ) -> List[Dict[str, Any]]:
-    """
-    Fetch multiple assets in one request.
-
-    Intended for signal scanning to avoid one API request per coin.
-    """
     normalized_codes: List[str] = []
 
     for code in codes:
-        normalized = _normalize_code(code)
+        value = _normalize_code(code)
 
-        if normalized not in normalized_codes:
-            normalized_codes.append(normalized)
+        if value not in normalized_codes:
+            normalized_codes.append(value)
 
     if not normalized_codes:
         return []
@@ -212,13 +228,103 @@ def get_coins(
 
     if not isinstance(data, list):
         raise LiveCoinWatchError(
-            "Unexpected response for coin map"
+            "Unexpected coin map response"
         )
 
     result = []
 
     for item in data:
-        if isinstance(item, dict):
+        if not isinstance(item, dict):
+            continue
+
+        if not item.get("code"):
+            continue
+
+        try:
             result.append(_normalize_coin(item))
+        except (TypeError, ValueError):
+            continue
+
+    return result
+
+
+def list_coins(
+    *,
+    sort: str = "volume",
+    order: str = "descending",
+    offset: int = 0,
+    limit: int = 100,
+) -> List[Dict[str, Any]]:
+    """
+    Market scanner endpoint.
+
+    Useful for:
+    - volume leaders
+    - biggest movers
+    - momentum scanning
+    - market-cap filtering
+    """
+
+    limit = max(
+        1,
+        min(int(limit), 200),
+    )
+
+    offset = max(
+        0,
+        int(offset),
+    )
+
+    allowed_sort = {
+        "rank",
+        "price",
+        "volume",
+        "cap",
+    }
+
+    if sort not in allowed_sort:
+        raise ValueError(
+            f"Unsupported sort: {sort}"
+        )
+
+    if order not in {
+        "ascending",
+        "descending",
+    }:
+        raise ValueError(
+            "order must be ascending "
+            "or descending"
+        )
+
+    data = _post(
+        "/coins/list",
+        {
+            "currency": "USD",
+            "sort": sort,
+            "order": order,
+            "offset": offset,
+            "limit": limit,
+            "meta": False,
+        },
+    )
+
+    if not isinstance(data, list):
+        raise LiveCoinWatchError(
+            "Unexpected coin list response"
+        )
+
+    result = []
+
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+
+        if not item.get("code"):
+            continue
+
+        try:
+            result.append(_normalize_coin(item))
+        except (TypeError, ValueError):
+            continue
 
     return result
