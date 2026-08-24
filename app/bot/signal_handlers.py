@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from html import escape
 from typing import Any, Dict, List
 
 from telegram import (
@@ -9,11 +8,13 @@ from telegram import (
     InlineKeyboardMarkup,
     Update,
 )
-from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from app.engines.signals.market_signal_scanner import (
     scan_market,
+)
+from app.engines.signals.setup_signal_engine import (
+    analyze_setup,
 )
 from app.engines.signals.top30_signal_scanner import (
     scan_top30,
@@ -23,69 +24,30 @@ from app.services.signal_card_renderer import (
 )
 
 
-COIN_ICONS = {
-    "BTC": "₿",
-    "ETH": "Ξ",
-    "SOL": "◎",
-    "BNB": "🟡",
-    "XRP": "⚫",
-    "ADA": "🔵",
-    "DOGE": "Ð",
-    "TRX": "🔴",
-    "LINK": "🔷",
-    "AVAX": "🔺",
-    "DOT": "⚪",
-    "LTC": "Ł",
-    "BCH": "🟢",
-    "TON": "💎",
-    "UNI": "🦄",
-    "AAVE": "👻",
-    "NEAR": "◉",
-    "ATOM": "⚛️",
-    "XLM": "✦",
-    "SUI": "💧",
-    "APT": "◼️",
-    "INJ": "◈",
-    "POL": "🟣",
-    "FET": "🤖",
-    "GRT": "◫",
-    "PENDLE": "◐",
-}
-
-
-def _coin_icon(
-    code: str,
-) -> str:
-    return COIN_ICONS.get(
-        code.upper(),
-        "●",
-    )
-
-
 def _money(
     value: Any,
 ) -> str:
     if value is None:
         return "—"
 
-    value = float(value)
+    number = float(value)
 
-    if abs(value) >= 1_000_000_000:
+    if abs(number) >= 1_000_000_000:
         return (
-            f"${value / 1_000_000_000:.2f}B"
+            f"${number / 1_000_000_000:.2f}B"
         )
 
-    if abs(value) >= 1_000_000:
+    if abs(number) >= 1_000_000:
         return (
-            f"${value / 1_000_000:.1f}M"
+            f"${number / 1_000_000:.1f}M"
         )
 
-    if abs(value) >= 1_000:
+    if abs(number) >= 1_000:
         return (
-            f"${value / 1_000:.1f}K"
+            f"${number / 1_000:.1f}K"
         )
 
-    return f"${value:.2f}"
+    return f"${number:.2f}"
 
 
 def _price(
@@ -94,15 +56,15 @@ def _price(
     if value is None:
         return "—"
 
-    value = float(value)
+    number = float(value)
 
-    if abs(value) >= 1000:
-        return f"{value:,.2f}"
+    if abs(number) >= 1000:
+        return f"{number:,.2f}"
 
-    if abs(value) >= 1:
-        return f"{value:.4f}"
+    if abs(number) >= 1:
+        return f"{number:.4f}"
 
-    return f"{value:.8f}"
+    return f"{number:.8f}"
 
 
 def _percent(
@@ -111,20 +73,20 @@ def _percent(
     if value is None:
         return "—"
 
-    value = float(value)
+    number = float(value)
 
     sign = (
         "+"
-        if value > 0
+        if number > 0
         else ""
     )
 
     return (
-        f"{sign}{value:.2f}%"
+        f"{sign}{number:.2f}%"
     )
 
 
-def _keyboard() -> InlineKeyboardMarkup:
+def _main_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [
@@ -133,6 +95,7 @@ def _keyboard() -> InlineKeyboardMarkup:
                     callback_data=(
                         "signal_top_setups"
                     ),
+                    style="primary",
                 ),
             ],
             [
@@ -141,12 +104,14 @@ def _keyboard() -> InlineKeyboardMarkup:
                     callback_data=(
                         "signal_winners"
                     ),
+                    style="success",
                 ),
                 InlineKeyboardButton(
                     "🔴 20 نزولی",
                     callback_data=(
                         "signal_losers"
                     ),
+                    style="danger",
                 ),
             ],
             [
@@ -183,6 +148,97 @@ def _keyboard() -> InlineKeyboardMarkup:
     )
 
 
+def _movers_keyboard(
+    items: List[Dict[str, Any]],
+    *,
+    winners: bool,
+) -> InlineKeyboardMarkup:
+    """
+    20 assets:
+        left column  = 1..10
+        right column = 11..20
+
+    Each button contains rank, symbol and
+    24h percentage and opens coin analysis.
+    """
+    visible = items[:20]
+
+    rows = []
+
+    style = (
+        "success"
+        if winners
+        else "danger"
+    )
+
+    for index in range(10):
+        row = []
+
+        for item_index in (
+            index,
+            index + 10,
+        ):
+            if item_index >= len(
+                visible
+            ):
+                continue
+
+            item = visible[
+                item_index
+            ]
+
+            code = str(
+                item.get("code")
+                or "?"
+            ).upper()
+
+            change = float(
+                item.get(
+                    "change_24h_percent"
+                )
+                or 0
+            )
+
+            sign = (
+                "+"
+                if change > 0
+                else ""
+            )
+
+            text = (
+                f"{item_index + 1:02d} "
+                f"{code}  "
+                f"{sign}{change:.2f}%"
+            )
+
+            row.append(
+                InlineKeyboardButton(
+                    text=text,
+                    callback_data=(
+                        "signal_coin_"
+                        + code
+                    ),
+                    style=style,
+                )
+            )
+
+        if row:
+            rows.append(row)
+
+    rows.append(
+        [
+            InlineKeyboardButton(
+                "⬅️ بازگشت به Signal Terminal",
+                callback_data="signal_home",
+            )
+        ]
+    )
+
+    return InlineKeyboardMarkup(
+        rows
+    )
+
+
 async def _market_scan() -> Dict[str, Any]:
     return await asyncio.to_thread(
         scan_market,
@@ -199,98 +255,12 @@ async def _top_scan(
     )
 
 
-def _movers_text(
-    items: List[Dict[str, Any]],
-    winners: bool,
-) -> str:
-    if winners:
-        title = (
-            "🟢 <b>TOP 20 GAINERS</b>"
-        )
-        subtitle = (
-            "🚀 بیشترین رشد 24 ساعت"
-        )
-        arrow = "▲"
-    else:
-        title = (
-            "🔴 <b>TOP 20 LOSERS</b>"
-        )
-        subtitle = (
-            "🔻 بیشترین افت 24 ساعت"
-        )
-        arrow = "▼"
-
-    lines = [
-        title,
-        subtitle,
-        "",
-    ]
-
-    for index, item in enumerate(
-        items[:20],
-        start=1,
-    ):
-        code = str(
-            item.get("code")
-            or "?"
-        ).upper()
-
-        change = float(
-            item.get(
-                "change_24h_percent"
-            )
-            or 0
-        )
-
-        icon = _coin_icon(
-            code
-        )
-
-        change_text = (
-            f"+{change:.2f}%"
-            if change > 0
-            else f"{change:.2f}%"
-        )
-
-        lines.append(
-            (
-                f"{arrow} "
-                f"<b>{index:02d}</b>  "
-                f"{escape(icon)} "
-                f"<b>{escape(code)}</b>"
-            )
-        )
-
-        lines.append(
-            (
-                "       "
-                f"<b>{change_text}</b>"
-            )
-        )
-
-        if index < len(
-            items[:20]
-        ):
-            lines.append(
-                "──────────────"
-            )
-
-    lines.extend(
-        [
-            "",
-            (
-                "🛡 <b>Filter:</b> "
-                "Market Cap > ارزش 1000 BTC"
-            ),
-            (
-                "📡 <b>Source:</b> "
-                "LiveCoinWatch"
-            ),
-        ]
-    )
-
-    return "\n".join(
-        lines
+async def _coin_analysis(
+    code: str,
+) -> Dict[str, Any]:
+    return await asyncio.to_thread(
+        analyze_setup,
+        f"{code}/USDT",
     )
 
 
@@ -308,10 +278,6 @@ def _rows_text(
             item.get("code")
             or "?"
         ).upper()
-
-        icon = _coin_icon(
-            code
-        )
 
         volume = _money(
             item.get(
@@ -370,7 +336,7 @@ def _rows_text(
         lines.append(
             (
                 f"{index:02d}. "
-                f"{icon} {code}\n"
+                f"{code}\n"
                 f"     {detail}"
             )
         )
@@ -399,31 +365,18 @@ def _setup_caption(
     )
 
     if direction == "LONG_WATCH":
-        direction_fa = (
-            "🟢 رصد لانگ"
+        direction_text = (
+            "🟢 LONG WATCH"
         )
 
     elif direction == "SHORT_WATCH":
-        direction_fa = (
-            "🔴 رصد شورت"
+        direction_text = (
+            "🔴 SHORT WATCH"
         )
 
     else:
-        direction_fa = (
+        direction_text = (
             f"🟡 {direction}"
-        )
-
-    if grade in {
-        "A",
-        "A+",
-    }:
-        status = (
-            "✅ کاندید سیگنال قوی"
-        )
-    else:
-        status = (
-            "👁 Watchlist — "
-            "تأیید نهایی ندارد"
         )
 
     reasons = (
@@ -436,27 +389,38 @@ def _setup_caption(
         or []
     )
 
+    tf15 = (
+        signal.get(
+            "timeframes",
+            {}
+        ).get(
+            "15m",
+            {},
+        )
+    )
+
+    box = (
+        tf15.get("range")
+        or {}
+    )
+
     lines = [
-        (
-            "🎯 MRBIZNES "
-            "SIGNAL INTELLIGENCE"
-        ),
+        "🎯 MRBIZNES SIGNAL INTELLIGENCE",
         "",
         (
             f"Asset: "
             f"{signal.get('symbol')}"
         ),
         (
-            f"وضعیت: "
-            f"{direction_fa}"
+            f"Setup: {direction_text}"
         ),
         (
             f"Grade: {grade} | "
             f"Score: "
             f"{confidence}/100"
         ),
-        status,
         "",
+        "📍 TRADE MAP",
         (
             "Entry Trigger: "
             + _price(
@@ -489,7 +453,50 @@ def _setup_caption(
                 )
             )
         ),
+        "",
+        "📊 15M",
+        (
+            f"SMA: "
+            f"{tf15.get('sma_state', '—')}"
+        ),
+        (
+            f"RSI: "
+            f"{_price(tf15.get('rsi'))}"
+        ),
+        (
+            f"Dow: "
+            f"{tf15.get('dow', '—')}"
+        ),
+        (
+            "Volume: "
+            f"{(
+                tf15.get('volume')
+                or {}
+            ).get('state', '—')}"
+        ),
     ]
+
+    if box:
+        lines.extend(
+            [
+                (
+                    f"Range: "
+                    f"{box.get('length')} candles"
+                ),
+                (
+                    "Range High: "
+                    + _price(
+                        box.get("high")
+                    )
+                ),
+                (
+                    "Range Low: "
+                    + _price(
+                        box.get("low")
+                    )
+                ),
+            ]
+        )
 
     if reasons:
         lines.extend(
@@ -499,7 +506,7 @@ def _setup_caption(
             ]
         )
 
-        for reason in reasons[:4]:
+        for reason in reasons[:5]:
             lines.append(
                 f"• {reason}"
             )
@@ -525,8 +532,8 @@ def _setup_caption(
                 "XT + LiveCoinWatch"
             ),
             (
-                "⚠️ جهت بازار "
-                "تضمین‌شده نیست."
+                "⚠️ WATCH/Analysis؛ "
+                "توصیه قطعی معامله نیست."
             ),
         ]
     )
@@ -555,9 +562,9 @@ async def signal_center(
 
         text = (
             "📡 MRBIZNES SIGNAL TERMINAL\n\n"
-            "🎯 تحلیل چندتایم‌فریمی\n"
-            "🟢 Top 20 صعودی\n"
-            "🔴 Top 20 نزولی\n"
+            "🎯 Multi-Timeframe Setups\n"
+            "🟢 Top 20 Gainers\n"
+            "🔴 Top 20 Losers\n"
             "📊 Volume Intelligence\n"
             "🚀 Momentum Radar\n\n"
             "🛡 Market Cap > "
@@ -570,7 +577,9 @@ async def signal_center(
 
         await loading.edit_text(
             text,
-            reply_markup=_keyboard(),
+            reply_markup=(
+                _main_keyboard()
+            ),
         )
 
     except Exception:
@@ -578,6 +587,63 @@ async def signal_center(
             "❌ دریافت Signal Terminal "
             "ناموفق بود."
         )
+
+
+async def _show_movers(
+    query,
+    *,
+    winners: bool,
+) -> None:
+    result = await _market_scan()
+
+    if winners:
+        items = result[
+            "biggest_winners_24h"
+        ]
+
+        title = (
+            "🟢 TOP 20 GAINERS • 24H\n\n"
+            "روی هر کوین بزن برای تحلیل "
+            "15m / 1h / 4h / 1w"
+        )
+
+    else:
+        items = result[
+            "biggest_losers_24h"
+        ]
+
+        title = (
+            "🔴 TOP 20 LOSERS • 24H\n\n"
+            "روی هر کوین بزن برای تحلیل "
+            "15m / 1h / 4h / 1w"
+        )
+
+    await query.edit_message_text(
+        title,
+        reply_markup=(
+            _movers_keyboard(
+                items,
+                winners=winners,
+            )
+        ),
+    )
+
+
+async def _send_signal_card(
+    query,
+    signal: Dict[str, Any],
+) -> None:
+    card = await asyncio.to_thread(
+        render_signal_card,
+        signal,
+    )
+
+    await query.message.reply_photo(
+        photo=card,
+        caption=_setup_caption(
+            signal
+        ),
+    )
 
 
 async def _send_top_setup(
@@ -597,36 +663,25 @@ async def _send_top_setup(
 
     elif result["watchlist_b"]:
         selected = (
-            result[
-                "watchlist_b"
-            ][0]
+            result["watchlist_b"][0]
         )
 
     else:
         selected = None
 
     if selected is None:
-        await (
-            query.message.reply_text(
-                "🔎 ستاپ باکیفیت "
-                "کافی پیدا نشد.\n\n"
-                "سیگنال اجباری "
-                "تولید نمی‌شود."
-            )
+        await query.message.reply_text(
+            "🔎 در حال حاضر "
+            "ستاپ باکیفیت کافی "
+            "پیدا نشد.\n\n"
+            "سیگنال اجباری تولید نمی‌شود."
         )
 
         return
 
-    card = await asyncio.to_thread(
-        render_signal_card,
+    await _send_signal_card(
+        query,
         selected,
-    )
-
-    await query.message.reply_photo(
-        photo=card,
-        caption=_setup_caption(
-            selected
-        ),
     )
 
 
@@ -646,60 +701,96 @@ async def signal_callback(
         or ""
     )
 
-    if action in {
-        "signal_winners",
-        "signal_losers",
-    }:
-        await query.edit_message_text(
-            "📊 در حال دریافت "
-            "Movers..."
-        )
-
+    if action == "signal_winners":
         try:
-            result = await _market_scan()
-
-            winners = (
-                action
-                == "signal_winners"
-            )
-
-            items = (
-                result[
-                    "biggest_winners_24h"
-                ]
-                if winners
-                else result[
-                    "biggest_losers_24h"
-                ]
-            )
-
-            await (
-                query.message.reply_text(
-                    _movers_text(
-                        items,
-                        winners,
-                    ),
-                    parse_mode=(
-                        ParseMode.HTML
-                    ),
-                )
-            )
-
-            await (
-                query.message.reply_text(
-                    "📡 MRBIZNES "
-                    "SIGNAL TERMINAL",
-                    reply_markup=_keyboard(),
-                )
+            await _show_movers(
+                query,
+                winners=True,
             )
 
         except Exception:
-            await (
-                query.message.reply_text(
-                    "❌ دریافت Movers "
-                    "ناموفق بود.",
-                    reply_markup=_keyboard(),
+            await query.edit_message_text(
+                "❌ دریافت Gainers "
+                "ناموفق بود.",
+                reply_markup=(
+                    _main_keyboard()
+                ),
+            )
+
+        return
+
+    if action == "signal_losers":
+        try:
+            await _show_movers(
+                query,
+                winners=False,
+            )
+
+        except Exception:
+            await query.edit_message_text(
+                "❌ دریافت Losers "
+                "ناموفق بود.",
+                reply_markup=(
+                    _main_keyboard()
+                ),
+            )
+
+        return
+
+    if action.startswith(
+        "signal_coin_"
+    ):
+        code = (
+            action[
+                len(
+                    "signal_coin_"
+                ):
+            ]
+            .strip()
+            .upper()
+        )
+
+        if not code:
+            return
+
+        await query.edit_message_text(
+            (
+                f"🔎 {code}/USDT\n\n"
+                "در حال تحلیل:\n"
+                "15m • 1h • 4h • 1w\n"
+                "SMA 7/25/99 • RSI • "
+                "MACD • ATR • Volume • Dow"
+            )
+        )
+
+        try:
+            signal = (
+                await _coin_analysis(
+                    code
                 )
+            )
+
+            await _send_signal_card(
+                query,
+                signal,
+            )
+
+            await query.message.reply_text(
+                "📡 MRBIZNES SIGNAL TERMINAL",
+                reply_markup=(
+                    _main_keyboard()
+                ),
+            )
+
+        except Exception:
+            await query.message.reply_text(
+                (
+                    f"❌ تحلیل {code} "
+                    "ناموفق بود."
+                ),
+                reply_markup=(
+                    _main_keyboard()
+                ),
             )
 
         return
@@ -716,21 +807,20 @@ async def signal_callback(
                 query
             )
 
-            await (
-                query.message.reply_text(
-                    "📡 MRBIZNES "
-                    "SIGNAL TERMINAL",
-                    reply_markup=_keyboard(),
-                )
+            await query.message.reply_text(
+                "📡 MRBIZNES SIGNAL TERMINAL",
+                reply_markup=(
+                    _main_keyboard()
+                ),
             )
 
         except Exception:
-            await (
-                query.message.reply_text(
-                    "❌ تحلیل Top Setups "
-                    "ناموفق بود.",
-                    reply_markup=_keyboard(),
-                )
+            await query.message.reply_text(
+                "❌ تحلیل Top Setups "
+                "ناموفق بود.",
+                reply_markup=(
+                    _main_keyboard()
+                ),
             )
 
         return
@@ -744,10 +834,8 @@ async def signal_callback(
 
         if action == "signal_home":
             text = (
-                "📡 MRBIZNES "
-                "SIGNAL TERMINAL\n\n"
-                f"✅ دارایی‌های واجد "
-                f"شرایط: "
+                "📡 MRBIZNES SIGNAL TERMINAL\n\n"
+                f"✅ دارایی‌های واجد شرایط: "
                 f"{result['eligible_count']}\n"
                 "🛡 Market Cap > "
                 "1000 BTC\n\n"
@@ -764,8 +852,7 @@ async def signal_callback(
                     "volume",
                 )
                 + "\n\n"
-                "ℹ️ حجم معاملات "
-                "≠ ورود خالص پول."
+                "ℹ️ Volume ≠ Net Inflow."
             )
 
         elif action == "signal_momentum":
@@ -795,17 +882,20 @@ async def signal_callback(
 
         else:
             text = (
-                "📡 MRBIZNES "
-                "SIGNAL TERMINAL"
+                "📡 MRBIZNES SIGNAL TERMINAL"
             )
 
         await query.edit_message_text(
             text,
-            reply_markup=_keyboard(),
+            reply_markup=(
+                _main_keyboard()
+            ),
         )
 
     except Exception:
         await query.edit_message_text(
             "❌ خطا در اسکن بازار.",
-            reply_markup=_keyboard(),
+            reply_markup=(
+                _main_keyboard()
+            ),
         )
