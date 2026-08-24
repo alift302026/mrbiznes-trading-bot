@@ -172,6 +172,10 @@ from app.engines.sessions.alert_engine import (
     session_alert_job,
 )
 
+from app.engines.news.arzdigital_breaking_worker import (
+    arzdigital_breaking_job,
+)
+
 from app.engines.news.economic_calendar_worker import (
     economic_calendar_sync_job,
 )
@@ -1260,6 +1264,19 @@ def build_application():
 
         logger.info(
             "Economic Calendar Worker: ON"
+        )
+
+    # BREAKING NEWS WORKER
+    if application.job_queue is not None:
+        application.job_queue.run_repeating(
+            arzdigital_breaking_job,
+            interval=3600,
+            first=30,
+            name="arzdigital-breaking-news-worker",
+        )
+
+        logger.info(
+            "Breaking News Worker: ON"
         )
 
     return application
