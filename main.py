@@ -267,7 +267,8 @@ async def is_channel_member(
     context,
 ):
 
-    return True
+    if not REQUIRED_CHANNEL:
+        return True
 
     try:
 
