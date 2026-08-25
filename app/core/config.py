@@ -10,15 +10,18 @@ load_dotenv(BASE_DIR / ".env")
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 
-REQUIRED_CHANNEL = os.getenv(
-    "REQUIRED_CHANNEL",
-    "@MrBiznesMarket",
-).strip()
+# Force override if old brand metatraid is present in env variables
+raw_channel = os.getenv("REQUIRED_CHANNEL", "@MrBiznesMarket").strip()
+if not raw_channel or "metatraid" in raw_channel.lower():
+    REQUIRED_CHANNEL = "@MrBiznesMarket"
+else:
+    REQUIRED_CHANNEL = raw_channel
 
-REQUIRED_CHANNEL_URL = os.getenv(
-    "REQUIRED_CHANNEL_URL",
-    "https://t.me/MrBiznesMarket",
-).strip()
+raw_url = os.getenv("REQUIRED_CHANNEL_URL", "https://t.me/MrBiznesMarket").strip()
+if not raw_url or "metatraid" in raw_url.lower():
+    REQUIRED_CHANNEL_URL = "https://t.me/MrBiznesMarket"
+else:
+    REQUIRED_CHANNEL_URL = raw_url
 
 
 def parse_admin_ids() -> set[int]:

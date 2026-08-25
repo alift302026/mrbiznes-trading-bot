@@ -319,7 +319,7 @@ async def require_channel(
 
         await update.message.reply_text(
             (
-                "🔒 برای استفاده از ALIFT TRADER "
+                "🔒 برای استفاده از مستر بیزنس "
                 "ابتدا باید عضو کانال رسمی شوید.\n\n"
 
                 "1️⃣ روی عضویت در کانال بزنید.\n"
