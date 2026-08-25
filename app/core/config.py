@@ -12,12 +12,12 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 
 REQUIRED_CHANNEL = os.getenv(
     "REQUIRED_CHANNEL",
-    "",
+    "@MrBiznesMarket",
 ).strip()
 
 REQUIRED_CHANNEL_URL = os.getenv(
     "REQUIRED_CHANNEL_URL",
-    "",
+    "https://t.me/MrBiznesMarket",
 ).strip()
 
 
