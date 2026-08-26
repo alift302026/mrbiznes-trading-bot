@@ -1,1 +1,0 @@
-# alift-trading-bot
