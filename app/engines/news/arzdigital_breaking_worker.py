@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 import html
+import json
 import logging
 import os
 import re
@@ -8,6 +7,7 @@ import xml.etree.ElementTree as ET
 
 from datetime import datetime
 from email.utils import parsedate_to_datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -35,15 +35,36 @@ BRAND_NAME = (
 MAX_ITEMS_PER_RUN = 5
 MAX_SUMMARY_LENGTH = 650
 
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+SEEN_FILE = BASE_DIR / "data" / "seen_news.json"
 
-_last_seen_link: Optional[str] = None
-_initialized = False
+
+def _load_seen_links() -> set[str]:
+    try:
+        if SEEN_FILE.exists():
+            with open(SEEN_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return set(data)
+    except Exception as exc:
+        logger.warning("Failed to load seen news links: %s", exc)
+    return set()
+
+
+def _save_seen_links(seen: set[str]) -> None:
+    try:
+        SEEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+        # Keep only last 100 links to save space
+        recent = list(seen)[-100:]
+        with open(SEEN_FILE, "w", encoding="utf-8") as f:
+            json.dump(recent, f, ensure_ascii=False, indent=2)
+    except Exception as exc:
+        logger.warning("Failed to save seen news links: %s", exc)
 
 
 def _channel_id() -> Optional[int]:
     value = os.getenv(
         "NEWS_CHANNEL_ID",
-        "",
+        "-1004401069634",
     ).strip()
 
     if not value:
@@ -62,16 +83,12 @@ def _clean_text(
     if not value:
         return ""
 
-    text = html.unescape(
-        str(value)
-    )
-
+    text = html.unescape(value)
     text = re.sub(
         r"<[^>]+>",
         " ",
         text,
     )
-
     text = re.sub(
         r"\s+",
         " ",
@@ -84,326 +101,160 @@ def _clean_text(
 def _short_summary(
     value: Optional[str],
 ) -> str:
-    text = _clean_text(
+    cleaned = _clean_text(
         value
     )
 
-    if not text:
+    if not cleaned:
         return ""
 
-    if len(text) <= MAX_SUMMARY_LENGTH:
-        return text
+    if (
+        len(cleaned)
+        <= MAX_SUMMARY_LENGTH
+    ):
+        return cleaned
 
-    shortened = text[
+    cut = cleaned[
         :MAX_SUMMARY_LENGTH
     ]
 
-    # Prefer ending on a complete word.
-    if " " in shortened:
-        shortened = shortened.rsplit(
-            " ",
-            1,
-        )[0]
+    last_space = (
+        cut.rfind(" ")
+    )
 
-    return shortened.rstrip(
-        "،,؛;:- "
-    ) + "…"
+    if last_space > 0:
+        cut = cut[:last_space]
+
+    return f"{cut}..."
 
 
 def _find_text(
     element: ET.Element,
-    names: List[str],
+    tag_name: str,
 ) -> str:
     for child in element:
-        tag = child.tag.lower()
-
-        if any(
-            name.lower()
-            in tag
-            for name in names
+        if (
+            child.tag.split("}")[-1]
+            == tag_name
         ):
-            text = (
-                child.text
-                or ""
-            ).strip()
-
-            if text:
-                return text
+            return (
+                child.text or ""
+            )
 
     return ""
 
 
 def _extract_image(
-    item: ET.Element,
-    description: str,
-) -> Optional[str]:
-    # RSS enclosure
-    for enclosure in item.findall(
-        "enclosure"
-    ):
-        url = (
-            enclosure.attrib.get(
-                "url"
-            )
-            or ""
-        ).strip()
-
-        media_type = (
-            enclosure.attrib.get(
-                "type"
-            )
-            or ""
-        ).lower()
+    item_element: ET.Element,
+) -> str:
+    for child in item_element:
+        tag = (
+            child.tag.split("}")[-1]
+        )
 
         if (
-            url
-            and (
-                media_type.startswith(
-                    "image/"
-                )
-                or re.search(
-                    r"\.(jpg|jpeg|png|webp)"
-                    r"($|\?)",
-                    url,
-                    re.I,
-                )
-            )
+            tag == "enclosure"
+            and child.attrib.get(
+                "type", ""
+            ).startswith("image/")
         ):
-            return url
-
-    # Namespaced media:content / media:thumbnail
-    for child in item:
-        tag = child.tag.lower()
-
-        if (
-            "thumbnail" in tag
-            or "content" in tag
-        ):
-            url = (
-                child.attrib.get(
-                    "url"
-                )
-                or ""
+            url = child.attrib.get(
+                "url", ""
             ).strip()
 
-            media_type = (
-                child.attrib.get(
-                    "type"
-                )
-                or ""
-            ).lower()
-
-            medium = (
-                child.attrib.get(
-                    "medium"
-                )
-                or ""
-            ).lower()
-
-            if (
-                url
-                and (
-                    "image" in media_type
-                    or medium == "image"
-                    or "thumbnail" in tag
-                    or re.search(
-                        r"\.(jpg|jpeg|png|webp)"
-                        r"($|\?)",
-                        url,
-                        re.I,
-                    )
-                )
-            ):
+            if url:
                 return url
 
-    # Image embedded in RSS description HTML
-    if description:
+        if tag in {
+            "content",
+            "thumbnail",
+        }:
+            url = child.attrib.get(
+                "url", ""
+            ).strip()
+
+            if url:
+                return url
+
+    description_raw = _find_text(
+        item_element,
+        "description",
+    )
+
+    if description_raw:
         match = re.search(
-            r"""<img[^>]+src=["']([^"']+)["']""",
-            description,
-            re.I,
+            r'<img[^>]+src=["\']([^"\']+)["\']',
+            description_raw,
+            re.IGNORECASE,
         )
 
         if match:
-            return html.unescape(
-                match.group(1)
-            ).strip()
+            url = (
+                match.group(1).strip()
+            )
 
-    return None
+            if url:
+                return url
+
+    return ""
 
 
 def _hashtags(
     title: str,
     summary: str,
 ) -> List[str]:
-    text = (
-        f"{title} {summary}"
-    ).lower()
+    combined = (
+        f"{title} {summary}".lower()
+    )
 
-    rules = [
-        (
-            (
-                "بیت کوین",
-                "بیت‌کوین",
-                "bitcoin",
-                " btc",
-            ),
-            "#بیت_کوین",
-        ),
-        (
-            (
-                "اتریوم",
-                "ethereum",
-                " eth",
-            ),
-            "#اتریوم",
-        ),
-        (
-            (
-                "ریپل",
-                "xrp",
-            ),
-            "#ریپل",
-        ),
-        (
-            (
-                "سولانا",
-                "solana",
-            ),
-            "#سولانا",
-        ),
-        (
-            (
-                "تتر",
-                "usdt",
-            ),
-            "#تتر",
-        ),
-        (
-            (
-                "دوج کوین",
-                "دوج‌کوین",
-                "dogecoin",
-            ),
-            "#دوج_کوین",
-        ),
-        (
-            (
-                "طلا",
-                "gold",
-            ),
-            "#طلا",
-        ),
-        (
-            (
-                "فدرال رزرو",
-                "fed ",
-                "powell",
-                "پاول",
-            ),
-            "#فدرال_رزرو",
-        ),
-        (
-            (
-                "تورم",
-                "cpi",
-                "ppi",
-            ),
-            "#تورم",
-        ),
-        (
-            (
-                "نرخ بهره",
-                "interest rate",
-            ),
-            "#نرخ_بهره",
-        ),
-        (
-            (
-                "ترامپ",
-                "trump",
-            ),
-            "#ترامپ",
-        ),
-        (
-            (
-                "تحریم",
-                "sanction",
-            ),
-            "#تحریم",
-        ),
-        (
-            (
-                "صرافی",
-                "exchange",
-            ),
-            "#صرافی",
-        ),
-        (
-            (
-                "هک",
-                "hack",
-                "exploit",
-            ),
-            "#امنیت",
-        ),
-        (
-            (
-                "دیفای",
-                "defi",
-            ),
-            "#دیفای",
-        ),
-        (
-            (
-                "etf",
-                "صندوق قابل معامله",
-            ),
-            "#ETF",
-        ),
-        (
-            (
-                "فارکس",
-                "forex",
-            ),
-            "#فارکس",
-        ),
-        (
-            (
-                "اقتصاد",
-                "تعرفه",
-                "gdp",
-                "بیکاری",
-                "اشتغال",
-            ),
-            "#اقتصاد",
-        ),
+    tags = []
+
+    keyword_map = [
+        ("بیت کوین", "#بیت_کوین"),
+        ("اتریوم", "#اتریوم"),
+        ("ریپل", "#ریپل"),
+        ("سولانا", "#سولانا"),
+        ("طلا", "#طلا"),
+        ("فدرال رزرو", "#فدرال_رزرو"),
+        ("پاول", "#فدرال_رزرو"),
+        ("تورم", "#تورم"),
+        ("نرخ بهره", "#نرخ_بهره"),
+        ("ترامپ", "#ترامپ"),
+        ("تحریم", "#تحریم"),
+        ("صرافی", "#صرافی"),
+        ("هک", "#امنیت"),
+        ("دیفای", "#دیفای"),
+        ("etf", "#ETF"),
+        ("فارکس", "#فارکس"),
+        ("اقتصاد", "#اقتصاد"),
     ]
 
-    tags: List[str] = []
-
-    for keywords, tag in rules:
-        if any(
-            keyword in text
-            for keyword in keywords
+    for (
+        kw,
+        tag,
+    ) in keyword_map:
+        if (
+            kw in combined
+            and tag not in tags
         ):
-            if tag not in tags:
-                tags.append(tag)
+            tags.append(tag)
 
-        if len(tags) == 2:
-            break
-
-    fallbacks = [
-        "#کریپتو",
-        "#اقتصاد",
-    ]
-
-    for tag in fallbacks:
         if len(tags) >= 2:
             break
 
-        if tag not in tags:
-            tags.append(tag)
+    if not tags:
+        tags = [
+            "#کریپتو",
+            "#اقتصاد",
+        ]
+
+    elif len(tags) == 1:
+        fallback = (
+            "#اقتصاد"
+            if tags[0] != "#اقتصاد"
+            else "#کریپتو"
+        )
+        tags.append(fallback)
 
     return tags[:2]
 
@@ -416,147 +267,94 @@ def _fetch_feed() -> List[
         timeout=REQUEST_TIMEOUT,
         headers={
             "User-Agent": (
-                "MrBiznes/1.0"
-            ),
-            "Accept": (
-                "application/rss+xml,"
-                "application/xml,"
-                "text/xml"
-            ),
+                "Mozilla/5.0 "
+                "(Windows NT 10.0; "
+                "Win64; x64) "
+                "AppleWebKit/537.36"
+            )
         },
     )
 
     response.raise_for_status()
 
-    try:
-        root = ET.fromstring(
-            response.content
-        )
+    root = ET.fromstring(
+        response.content
+    )
 
-    except ET.ParseError as exc:
-        raise RuntimeError(
-            "Invalid RSS XML"
-        ) from exc
-
-    result: List[
+    items: List[
         Dict[str, Any]
     ] = []
 
     for item in root.findall(
         ".//item"
     ):
-        title = (
-            item.findtext(
-                "title"
+        title = _clean_text(
+            _find_text(
+                item, "title"
             )
-            or ""
-        ).strip()
-
-        link = (
-            item.findtext(
-                "link"
-            )
-            or ""
-        ).strip()
-
-        description_raw = (
-            item.findtext(
-                "description"
-            )
-            or ""
         )
 
-        # Some feeds put fuller text in
-        # namespaced content:encoded.
-        content_raw = _find_text(
-            item,
-            [
-                "encoded",
-            ],
-        )
-
-        summary_source = (
-            description_raw
-            or content_raw
-        )
-
-        summary = _short_summary(
-            summary_source
-        )
-
-        published_text = (
-            item.findtext(
-                "pubDate"
+        link = _clean_text(
+            _find_text(
+                item, "link"
             )
-            or ""
-        ).strip()
+        )
 
-        published_at = None
+        description = (
+            _find_text(
+                item,
+                "description",
+            )
+        )
 
-        if published_text:
+        summary = _clean_text(
+            description
+        )
+
+        pub_date_raw = _clean_text(
+            _find_text(
+                item, "pubDate"
+            )
+        )
+
+        pub_date = None
+
+        if pub_date_raw:
             try:
-                published_at = (
-                    parsedate_to_datetime(
-                        published_text
-                    )
+                pub_date = parsedate_to_datetime(
+                    pub_date_raw
                 )
 
-            except (
-                TypeError,
-                ValueError,
-            ):
-                published_at = None
-
-        if not title or not link:
-            continue
+            except Exception:
+                pub_date = None
 
         image_url = _extract_image(
-            item,
-            description_raw
-            or content_raw,
+            item
         )
 
-        result.append(
-            {
-                "title": (
-                    _clean_text(
-                        title
-                    )
-                ),
-                "summary": summary,
-                "link": link,
+        if title and link:
+            items.append(
+                {
+                    "title": title,
+                    "link": link,
+                    "summary": summary,
+                    "pub_date": pub_date,
+                    "image_url": image_url,
+                }
+            )
 
-                # Retained internally for
-                # provenance/deduplication.
-                # Not displayed in channel post.
-                "source_url": link,
-
-                "published_at": (
-                    published_at
-                ),
-
-                "image_url": (
-                    image_url
-                ),
-            }
-        )
-
-    return result
+    return items
 
 
 def _format_message(
     item: Dict[str, Any],
 ) -> str:
     title = _clean_text(
-        item.get(
-            "title"
-        )
+        item.get("title")
     )
 
     summary = _short_summary(
-        item.get(
-            "summary"
-        )
+        item.get("summary")
     )
 
     tags = _hashtags(
@@ -581,24 +379,15 @@ def _format_message(
     parts.extend(
         [
             "",
-            (
-                "⚡ جدیدترین تحولات "
-                "کریپتو و اقتصاد، "
-                "کوتاه و سریع"
-            ),
+            "⚡ جدیدترین تحولات کریپتو و اقتصاد، کوتاه و سریع",
             "",
             " ".join(tags),
             "",
-            (
-                f"☕️ {CHANNEL_USERNAME} "
-                f"| {BRAND_NAME}"
-            ),
+            f"☕️ {CHANNEL_USERNAME}",
         ]
     )
 
-    return "\n".join(
-        parts
-    )
+    return "\n".join(parts)
 
 
 async def _send_item(
@@ -606,15 +395,9 @@ async def _send_item(
     channel_id: int,
     item: Dict[str, Any],
 ) -> None:
-    text = _format_message(
-        item
-    )
+    text = _format_message(item)
 
-    image_url = (
-        item.get(
-            "image_url"
-        )
-    )
+    image_url = item.get("image_url")
 
     if image_url:
         try:
@@ -623,13 +406,11 @@ async def _send_item(
                 photo=image_url,
                 caption=text,
             )
-
             return
 
         except Exception:
             logger.exception(
-                "News image send failed; "
-                "falling back to text"
+                "News image send failed; falling back to text"
             )
 
     await context.bot.send_message(
@@ -643,127 +424,49 @@ async def arzdigital_breaking_job(
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
     """
-    Poll the official Breaking News RSS.
-
-    First successful execution establishes
-    a baseline without flooding old news.
-
-    Later runs send only genuinely new feed
-    entries, at most MAX_ITEMS_PER_RUN.
-
-    Original source URL remains in memory
-    for deduplication/provenance but is not
-    displayed in the Telegram post.
+    Poll the official Breaking News RSS hourly with disk-persisted deduplication.
     """
-    global _initialized
-    global _last_seen_link
-
     channel_id = _channel_id()
 
     if channel_id is None:
-        logger.warning(
-            "NEWS_CHANNEL_ID is "
-            "missing or invalid"
-        )
+        logger.warning("NEWS_CHANNEL_ID is missing or invalid")
         return
 
     try:
         items = _fetch_feed()
 
     except Exception:
-        logger.exception(
-            "Breaking RSS fetch failed"
-        )
+        logger.exception("Breaking RSS fetch failed")
         return
 
     if not items:
         return
 
-    newest_link = (
-        items[0]["link"]
-    )
+    seen_links = _load_seen_links()
 
-    if not _initialized:
-        _last_seen_link = (
-            newest_link
-        )
-
-        _initialized = True
-
-        logger.info(
-            "Breaking News baseline "
-            "initialized: %s",
-            newest_link,
-        )
+    # If first run ever (no seen links saved at all):
+    if not seen_links:
+        for it in items:
+            seen_links.add(it["link"])
+        _save_seen_links(seen_links)
+        logger.info("Initialized news seen links baseline (%d items)", len(items))
         return
 
-    if (
-        newest_link
-        == _last_seen_link
-    ):
+    # Find new items not in seen_links
+    new_items = [it for it in items if it["link"] not in seen_links]
+
+    if not new_items:
         return
 
-    new_items: List[
-        Dict[str, Any]
-    ] = []
+    # Send from oldest to newest among new items
+    new_items.reverse()
+    new_items = new_items[:MAX_ITEMS_PER_RUN]
 
-    baseline_found = False
-
-    for item in items:
-        if (
-            item["link"]
-            == _last_seen_link
-        ):
-            baseline_found = True
-            break
-
-        new_items.append(
-            item
-        )
-
-    if not baseline_found:
-        # Do not flood the channel when the
-        # old baseline falls out of the feed.
-        _last_seen_link = (
-            newest_link
-        )
-
-        logger.warning(
-            "Previous RSS baseline "
-            "not found; baseline refreshed"
-        )
-        return
-
-    new_items = new_items[
-        :MAX_ITEMS_PER_RUN
-    ]
-
-    for item in reversed(
-        new_items
-    ):
+    for item in new_items:
         try:
-            await _send_item(
-                context,
-                channel_id,
-                item,
-            )
-
+            await _send_item(context, channel_id, item)
+            seen_links.add(item["link"])
         except Exception:
-            logger.exception(
-                "Failed to send "
-                "Breaking News"
-            )
+            logger.exception("Failed sending news item: %s", item.get("link"))
 
-            # Do not advance baseline after
-            # failed Telegram delivery.
-            return
-
-    _last_seen_link = (
-        newest_link
-    )
-
-    logger.info(
-        "Breaking News: %s "
-        "new item(s) sent",
-        len(new_items),
-    )
+    _save_seen_links(seen_links)
