@@ -115,7 +115,7 @@ def intro(
 ):
     if language == "fa":
         return (
-            "🧠 ALIFT TRADER READINESS\n"
+            "🧠 MrBiznes READINESS\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "خب تریدر، قبل اینکه بازار تو رو امتحان کنه، "
             "ببینیم خودت امروز چند چندی 😎\n\n"
@@ -137,7 +137,7 @@ def intro(
 
     if language == "ar":
         return (
-            "🧠 ALIFT TRADER READINESS\n"
+            "🧠 MrBiznes READINESS\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "قبل أن يختبرك السوق، دعنا نرى مدى "
             "جاهزيتك اليوم 😎\n\n"
@@ -149,7 +149,7 @@ def intro(
         )
 
     return (
-        "🧠 ALIFT TRADER READINESS\n"
+        "🧠 MrBiznes READINESS\n"
         "━━━━━━━━━━━━━━━━\n\n"
         "Before the market tests you, "
         "let's see how ready you are today 😎\n\n"
@@ -453,7 +453,7 @@ def report_text(
             )
 
         return (
-            "🧠 ALIFT READINESS REPORT\n"
+            "🧠 MrBiznes READINESS REPORT\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "🧘 آمادگی ذهنی\n"
             "{} {} / 100\n\n"
@@ -508,7 +508,7 @@ def report_text(
 
     if language == "ar":
         return (
-            "🧠 ALIFT READINESS REPORT\n"
+            "🧠 MrBiznes READINESS REPORT\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "🧘 الاستعداد الذهني: {}/100\n"
             "⚡ اليقظة المعرفية: {}/100\n"
@@ -532,7 +532,7 @@ def report_text(
         )
 
     return (
-        "🧠 ALIFT READINESS REPORT\n"
+        "🧠 MrBiznes READINESS REPORT\n"
         "━━━━━━━━━━━━━━━━\n\n"
         "🧘 Mental Readiness\n"
         "{} {}/100\n\n"

@@ -195,7 +195,7 @@ def render_signal_card(
     # Header
     draw.text(
         (60, 55),
-        "ALIFT TRADER",
+        "MrBiznes",
         font=title_font,
         fill=WHITE,
     )
@@ -632,7 +632,7 @@ def render_signal_card(
 
     draw.text(
         (60, 1310),
-        "ALIFT MARKET INTELLIGENCE",
+        "MrBiznes MARKET INTELLIGENCE",
         font=small_font,
         fill=GREEN,
     )

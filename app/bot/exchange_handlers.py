@@ -116,13 +116,13 @@ EXCHANGES = {
 def exchanges_home_text():
 
     return (
-        "🏦 ALIFT EXCHANGE HUB\n"
+        "🏦 MrBiznes EXCHANGE HUB\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
-        "به مرکز صرافی‌های ALIFT خوش آمدی 🚀\n\n"
+        "به مرکز صرافی‌های MrBiznes خوش آمدی 🚀\n\n"
 
         "از این بخش می‌توانی لینک‌های معرفی "
-        "و کدهای Referral مجموعه ALIFT را "
+        "و کدهای Referral مجموعه MrBiznes را "
         "مشاهده کنی.\n\n"
 
         "━━━━━━━━━━━━━━━━\n"
@@ -138,7 +138,7 @@ def exchanges_home_text():
         "━━━━━━━━━━━━━━━━\n"
         "⚠️ نکته مهم\n\n"
 
-        "ALIFT در این بخش فقط لینک معرفی ارائه "
+        "MrBiznes در این بخش فقط لینک معرفی ارائه "
         "می‌کند و به حساب، رمز عبور، API Key، "
         "کیف پول یا دارایی شما دسترسی ندارد.\n\n"
 
@@ -346,7 +346,7 @@ async def send_exchange_card(
 def security_text():
 
     return (
-        "🛡 ALIFT EXCHANGE SECURITY\n"
+        "🛡 MrBiznes EXCHANGE SECURITY\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         "قبل از استفاده از هر صرافی:\n\n"
@@ -363,7 +363,7 @@ def security_text():
         "❌ Private Key را داخل ربات وارد نکن.\n"
         "❌ API Secret را برای پشتیبانی ارسال نکن.\n\n"
 
-        "ALIFT برای Referral به اطلاعات ورود "
+        "MrBiznes برای Referral به اطلاعات ورود "
         "حساب صرافی شما نیاز ندارد."
     )
 

@@ -75,7 +75,7 @@ async def language_page(
 ):
 
     text = (
-        "🌐 ALIFT LANGUAGE\n"
+        "🌐 MrBiznes LANGUAGE\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         "🇮🇷 زبان خود را انتخاب کنید\n\n"

@@ -31,7 +31,7 @@ WELCOME_IMAGE = (
 # ============================================================
 
 WELCOME_TEXT = (
-    "🚀 ALIFT TRADER\n\n"
+    "🚀 MrBiznes\n\n"
     "«خوبی، تنها سرمایه‌گذاری است که "
     "هیچگاه شکست نمی‌خورد.»\n\n"
     "“Goodness is the only investment "

@@ -29,7 +29,7 @@ def build_alert_message(
 
     if language == "fa":
         return (
-            "🚨 ALIFT MARKET ALERT\n"
+            "🚨 MrBiznes MARKET ALERT\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "🪙 {}\n"
             "⏱ {}\n\n"
@@ -50,7 +50,7 @@ def build_alert_message(
 
     if language == "ar":
         return (
-            "🚨 ALIFT MARKET ALERT\n"
+            "🚨 MrBiznes MARKET ALERT\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "🪙 {}\n"
             "⏱ {}\n\n"
@@ -67,7 +67,7 @@ def build_alert_message(
         )
 
     return (
-        "🚨 ALIFT MARKET ALERT\n"
+        "🚨 MrBiznes MARKET ALERT\n"
         "━━━━━━━━━━━━━━━━\n\n"
         "🪙 {}\n"
         "⏱ {}\n\n"

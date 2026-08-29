@@ -89,7 +89,7 @@ def _importance(value: Any) -> str:
     """
     TradingView currently returns numeric importance.
 
-    Normalize provider-specific values into ALIFT's:
+    Normalize provider-specific values into MrBiznes's:
         low | medium | high
     """
     try:
@@ -171,7 +171,7 @@ def _fetch_sync(
 
     headers = {
         "Origin": "https://www.tradingview.com",
-        "User-Agent": "ALIFT-TRADER/1.0",
+        "User-Agent": "MrBiznes/1.0",
         "Accept": "application/json",
     }
 

@@ -26,7 +26,7 @@ REFERRAL_REWARD_POINTS = 10
 
 def referral_link(
     telegram_id,
-    bot_username="Alift_trader_bot",
+    bot_username="@Mrbiznesssbot",
 ):
 
     with SessionLocal() as db:

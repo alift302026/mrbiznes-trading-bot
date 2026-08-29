@@ -56,7 +56,7 @@ def market_keyboard():
 def market_text():
 
     return (
-        "🔎 ALIFT ASSET SEARCH\n"
+        "🔎 MrBiznes ASSET SEARCH\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         "بازار موردنظر را انتخاب کن.\n\n"

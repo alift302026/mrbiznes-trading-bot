@@ -25,7 +25,7 @@ def generate_referral_code():
         for _ in range(8)
     )
 
-    return f"ALIFT-{suffix}"
+    return f"MrBiznes-{suffix}"
 
 
 def get_or_create_user(

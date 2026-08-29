@@ -720,6 +720,6 @@ def analyze_setup(
         "execution_note": (
             "WATCH only. Entry requires "
             "a confirmed closed-candle trigger. "
-            "ALIFT does not execute a trade."
+            "MrBiznes does not execute a trade."
         ),
     }

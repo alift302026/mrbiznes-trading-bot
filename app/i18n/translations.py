@@ -13,7 +13,7 @@ TEXTS = {
 
     "fa": {
         # Core
-        "welcome": "به ALIFT TRADER خوش آمدید",
+        "welcome": "به MrBiznes خوش آمدید",
         "choose": "بخش موردنظر را انتخاب کنید:",
         "language_title": "🌐 زبان خود را انتخاب کنید",
         "language_saved": "✅ زبان با موفقیت روی فارسی تنظیم شد.",
@@ -145,7 +145,7 @@ TEXTS = {
     # ========================================================
 
     "en": {
-        "welcome": "Welcome to ALIFT TRADER",
+        "welcome": "Welcome to MrBiznes",
         "choose": "Choose a section:",
         "language_title": "🌐 Select your language",
         "language_saved": "✅ Language changed to English.",
@@ -270,7 +270,7 @@ TEXTS = {
     # ========================================================
 
     "ar": {
-        "welcome": "مرحباً بك في ALIFT TRADER",
+        "welcome": "مرحباً بك في MrBiznes",
         "choose": "اختر القسم المطلوب:",
         "language_title": "🌐 اختر لغتك",
         "language_saved": "✅ تم تغيير اللغة إلى العربية.",

@@ -119,10 +119,10 @@ def admin_keyboard():
 def admin_home_text():
 
     return (
-        "🛡 ALIFT ADMIN CENTER\n"
+        "🛡 MrBiznes ADMIN CENTER\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
-        "مرکز مدیریت ALIFT TRADER\n\n"
+        "مرکز مدیریت MrBiznes\n\n"
 
         "📊 آمار سیستم\n"
         "👥 مدیریت کاربران\n"
@@ -175,7 +175,7 @@ def dashboard_text():
     stats = dashboard_stats()
 
     return (
-        "📊 ALIFT DASHBOARD\n"
+        "📊 MrBiznes DASHBOARD\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         f"👥 Users: {stats['users']}\n"
@@ -1347,7 +1347,7 @@ async def admin_message(
                         ticket.telegram_id
                     ),
                     text=(
-                        "🎧 ALIFT SUPPORT\n"
+                        "🎧 MrBiznes SUPPORT\n"
                         "━━━━━━━━━━━━━━━━\n\n"
                         f"پاسخ جدید برای Ticket #{ticket_id}\n\n"
                         f"{text}"

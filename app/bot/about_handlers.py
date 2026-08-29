@@ -13,7 +13,7 @@ from telegram.ext import (
 # PROJECT INFO
 # ============================================================
 
-PROJECT_NAME = "ALIFT TRADER"
+PROJECT_NAME = "MrBiznes"
 PROJECT_VERSION = "0.3 Beta"
 
 
@@ -24,20 +24,20 @@ PROJECT_VERSION = "0.3 Beta"
 def about_text():
 
     return (
-        "🤝 ALIFT TRADER\n"
+        "🤝 MrBiznes\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         "🚀 دستیار هوشمند معامله‌گران\n\n"
 
-        "ALIFT TRADER یک پلتفرم در حال توسعه برای "
+        "MrBiznes یک پلتفرم در حال توسعه برای "
         "کمک به معامله‌گران بازارهای مالی است.\n\n"
 
-        "هدف ALIFT این است که اطلاعات مهم بازار، "
+        "هدف MrBiznes این است که اطلاعات مهم بازار، "
         "ابزارهای تحلیلی و هشدارهای شخصی‌سازی‌شده را "
         "در یک محیط ساده و سریع در اختیار معامله‌گر قرار دهد.\n\n"
 
         "━━━━━━━━━━━━━━━━\n"
-        "🧩 بخش‌های ALIFT\n\n"
+        "🧩 بخش‌های MrBiznes\n\n"
 
         "📊 داده‌های بازار\n"
         "🔔 Smart Alerts\n"
@@ -52,7 +52,7 @@ def about_text():
         "🎧 Support Center\n\n"
 
         "━━━━━━━━━━━━━━━━\n"
-        "🌐 آینده ALIFT\n\n"
+        "🌐 آینده MrBiznes\n\n"
 
         "Telegram Bot\n"
         "Web Platform\n"
@@ -60,9 +60,9 @@ def about_text():
         "iOS Application\n\n"
 
         "━━━━━━━━━━━━━━━━\n"
-        "🛡 اصل مهم ALIFT\n\n"
+        "🛡 اصل مهم MrBiznes\n\n"
 
-        "ALIFT در نسخه فعلی یک ابزار اطلاعاتی و "
+        "MrBiznes در نسخه فعلی یک ابزار اطلاعاتی و "
         "تحلیلی است و بدون درخواست و زیرساخت مشخص، "
         "معامله‌ای به جای کاربر اجرا نمی‌کند.\n\n"
 
@@ -182,10 +182,10 @@ async def about_callback(
 
         await query.edit_message_text(
             (
-                "🌐 ALIFT WEBSITE\n"
+                "🌐 MrBiznes WEBSITE\n"
                 "━━━━━━━━━━━━━━━━\n\n"
 
-                "وب‌سایت رسمی ALIFT در مرحله توسعه است.\n\n"
+                "وب‌سایت رسمی MrBiznes در مرحله توسعه است.\n\n"
 
                 "بعد از راه‌اندازی، حساب کاربری، "
                 "Alertها، Signals، Watchlist و سایر "
@@ -201,10 +201,10 @@ async def about_callback(
 
         await query.edit_message_text(
             (
-                "📱 ALIFT SOCIAL\n"
+                "📱 MrBiznes SOCIAL\n"
                 "━━━━━━━━━━━━━━━━\n\n"
 
-                "کانال‌ها و شبکه‌های رسمی ALIFT:\n\n"
+                "کانال‌ها و شبکه‌های رسمی MrBiznes:\n\n"
 
                 "📺 YouTube\n"
                 "📸 Instagram\n"
@@ -224,7 +224,7 @@ async def about_callback(
 
         await query.edit_message_text(
             (
-                "🎧 ALIFT SUPPORT\n"
+                "🎧 MrBiznes SUPPORT\n"
                 "━━━━━━━━━━━━━━━━\n\n"
 
                 "برای ارتباط با پشتیبانی، از بخش "
@@ -242,7 +242,7 @@ async def about_callback(
 
         await query.edit_message_text(
             (
-                "🤝 همکاری با ALIFT\n"
+                "🤝 همکاری با MrBiznes\n"
                 "━━━━━━━━━━━━━━━━\n\n"
 
                 "زمینه‌های همکاری آینده:\n\n"
@@ -269,7 +269,7 @@ async def about_callback(
                 "🛡 حریم خصوصی\n"
                 "━━━━━━━━━━━━━━━━\n\n"
 
-                "ALIFT اصل حداقل‌سازی اطلاعات کاربران "
+                "MrBiznes اصل حداقل‌سازی اطلاعات کاربران "
                 "را در طراحی سیستم دنبال می‌کند.\n\n"
 
                 "🔐 اطلاعات محرمانه و کلیدهای خصوصی "
@@ -293,10 +293,10 @@ async def about_callback(
                 "📜 قوانین استفاده\n"
                 "━━━━━━━━━━━━━━━━\n\n"
 
-                "استفاده از ALIFT به معنی پذیرش این است "
+                "استفاده از MrBiznes به معنی پذیرش این است "
                 "که بازارهای مالی دارای ریسک هستند.\n\n"
 
-                "ALIFT تضمینی درباره سود، بازده یا "
+                "MrBiznes تضمینی درباره سود، بازده یا "
                 "نتیجه معاملات ارائه نمی‌کند.\n\n"
 
                 "کاربر مسئول تصمیم معاملاتی، مدیریت "

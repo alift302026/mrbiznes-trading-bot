@@ -1,5 +1,5 @@
 # ==========================================
-# ALIFT - GIT IGNORE
+# MRBIZNES - GIT IGNORE
 # ==========================================
 
 # Secrets
@@ -43,7 +43,7 @@ project_tree.txt
 project_files.txt
 *.tmp
 *.bak
-alift-home-preview.html
-alift-landing-v2.html
-alift-theme-3.html
+mrbiznes-home-preview.html
+mrbiznes-landing-v2.html
+mrbiznes-theme-3.html
 .env

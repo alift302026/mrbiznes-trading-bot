@@ -44,10 +44,10 @@ STATUS_LABELS = {
 def support_home_text():
 
     return (
-        "🎧 ALIFT SUPPORT\n"
+        "🎧 MrBiznes SUPPORT\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
-        "مرکز پشتیبانی ALIFT TRADER\n\n"
+        "مرکز پشتیبانی MrBiznes\n\n"
 
         "اگر سؤال، مشکل فنی، مشکل پرداخت، "
         "موضوع مربوط به آلارم‌ها یا پیشنهادی داری، "
@@ -265,7 +265,7 @@ def ticket_text(
         ):
 
             sender = (
-                "🛡 ALIFT SUPPORT"
+                "🛡 MrBiznes SUPPORT"
             )
 
         else:

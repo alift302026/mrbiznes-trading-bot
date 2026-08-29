@@ -143,7 +143,7 @@ def alert_home_text(
     if language == "fa":
 
         return (
-            "🔔 ALIFT SMART ALERTS\n"
+            "🔔 MrBiznes SMART ALERTS\n"
             "━━━━━━━━━━━━━━━━\n\n"
 
             f"{plan}\n"
@@ -163,7 +163,7 @@ def alert_home_text(
         )
 
     return (
-        "🔔 ALIFT SMART ALERTS\n"
+        "🔔 MrBiznes SMART ALERTS\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         f"{plan}\n"
@@ -267,7 +267,7 @@ async def alerts_home(
 def guide_text():
 
     return (
-        "📖 ALIFT ALERT GUIDE\n"
+        "📖 MrBiznes ALERT GUIDE\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         "🪙 Crypto\n"
@@ -741,7 +741,7 @@ async def alert_callback(
         await context.bot.send_message(
             chat_id=user_id,
             text=(
-                "🚨 ALIFT TEST ALERT\n"
+                "🚨 MrBiznes TEST ALERT\n"
                 "━━━━━━━━━━━━━━━━\n\n"
                 "✅ سیستم اعلان فعال است."
             ),
@@ -762,7 +762,7 @@ async def alert_callback(
 
         await query.edit_message_text(
             (
-                "💎 ALIFT VIP\n"
+                "💎 MrBiznes VIP\n"
                 "━━━━━━━━━━━━━━━━\n\n"
 
                 "👤 NORMAL\n"

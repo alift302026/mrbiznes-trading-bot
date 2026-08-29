@@ -223,7 +223,7 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(
-    "alift-trader"
+    "MrBiznes"
 )
 
 
@@ -364,7 +364,7 @@ async def start(
         )
 
         if candidate.startswith(
-            "ALIFT-"
+            "MrBiznes-"
         ):
 
             referral_code = (
@@ -547,7 +547,7 @@ async def account_page(
         )
 
     text = (
-        "👤 ALIFT ACCOUNT\n"
+        "👤 MrBiznes ACCOUNT\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         f"🆔 Telegram ID\n"
@@ -960,24 +960,24 @@ async def menu_router(
 
     modules = {
         "signals":
-            "📡 ALIFT SIGNAL CENTER",
+            "📡 MrBiznes SIGNAL CENTER",
 
         "watchlist":
-            "👁 ALIFT WATCHLIST",
+            "👁 MrBiznes WATCHLIST",
 
         "news":
-            "📰 ALIFT NEWS CENTER",
+            "📰 MrBiznes NEWS CENTER",
 
         "analysis":
-            "🤖 ALIFT ANALYSIS",
+            "🤖 MrBiznes ANALYSIS",
 
         "trader":
-            "🤖 ALIFT TRADER BOT",
+            "🤖 MrBiznes BOT",
 
         "exchange":
             "🔗 EXCHANGE CONNECTION",
         "education":
-            "🎓 ALIFT EDUCATION",
+            "🎓 MrBiznes EDUCATION",
     }
 
     for key, title in (
@@ -1291,7 +1291,7 @@ def main():
     print(
         "\n"
         "========================================\n"
-        "             ALIFT TRADER\n"
+        "             MrBiznes\n"
         "========================================\n"
         "Languages         : FA / EN / AR\n"
         "Channel           : ENABLED\n"

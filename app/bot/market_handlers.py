@@ -136,7 +136,7 @@ async def market_home(
 ):
 
     text = (
-        "📊 ALIFT MARKET CENTER\n"
+        "📊 MrBiznes MARKET CENTER\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         "₿ Top 10 Crypto by Market Cap\n"

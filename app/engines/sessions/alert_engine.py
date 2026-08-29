@@ -111,7 +111,7 @@ def build_session_pre_alert(
             icon = "🔕"
 
         return (
-            "🌍 ALIFT SESSION ALERT\n"
+            "🌍 MrBiznes SESSION ALERT\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "{} {} {}\n\n"
             "⏳ {} دقیقه تا {}\n\n"
@@ -137,7 +137,7 @@ def build_session_pre_alert(
             icon = "🔕"
 
         return (
-            "🌍 ALIFT SESSION ALERT\n"
+            "🌍 MrBiznes SESSION ALERT\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "{} {} {}\n\n"
             "⏳ بقي {} دقيقة حتى {}\n\n"
@@ -161,7 +161,7 @@ def build_session_pre_alert(
         icon = "🔕"
 
     return (
-        "🌍 ALIFT SESSION ALERT\n"
+        "🌍 MrBiznes SESSION ALERT\n"
         "━━━━━━━━━━━━━━━━\n\n"
         "{} {} {}\n\n"
         "⏳ {} minutes until {}\n\n"
@@ -202,7 +202,7 @@ def build_session_event_alert(
             title = "🔴 سشن بسته شد"
 
         return (
-            "🌍 ALIFT SESSION ALERT\n"
+            "🌍 MrBiznes SESSION ALERT\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "{}\n\n"
             "{} {}\n\n"
@@ -223,7 +223,7 @@ def build_session_event_alert(
             title = "🔴 أغلقت الجلسة"
 
         return (
-            "🌍 ALIFT SESSION ALERT\n"
+            "🌍 MrBiznes SESSION ALERT\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "{}\n\n"
             "{} {}\n\n"
@@ -242,7 +242,7 @@ def build_session_event_alert(
         title = "🔴 SESSION CLOSED"
 
     return (
-        "🌍 ALIFT SESSION ALERT\n"
+        "🌍 MrBiznes SESSION ALERT\n"
         "━━━━━━━━━━━━━━━━\n\n"
         "{}\n\n"
         "{} {}\n\n"
@@ -300,7 +300,7 @@ def build_weekly_pre_alert(
             )
 
         return (
-            "📅 ALIFT WEEKLY ALERT\n"
+            "📅 MrBiznes WEEKLY ALERT\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "{}\n\n"
             "⏳ {} دقیقه باقی مانده\n\n"
@@ -324,7 +324,7 @@ def build_weekly_pre_alert(
             )
 
         return (
-            "📅 ALIFT WEEKLY ALERT\n"
+            "📅 MrBiznes WEEKLY ALERT\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "{}\n\n"
             "⏳ بقي {} دقيقة\n\n"
@@ -342,7 +342,7 @@ def build_weekly_pre_alert(
         title = "🔕 WEEKLY MARKET CLOSE"
 
     return (
-        "📅 ALIFT WEEKLY ALERT\n"
+        "📅 MrBiznes WEEKLY ALERT\n"
         "━━━━━━━━━━━━━━━━\n\n"
         "{}\n\n"
         "⏳ {} minutes remaining\n\n"
@@ -397,7 +397,7 @@ def build_weekly_event_alert(
             )
 
         return (
-            "📅 ALIFT WEEKLY ALERT\n"
+            "📅 MrBiznes WEEKLY ALERT\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "{}\n\n"
             "🇮🇷 زمان ایران:\n"
@@ -421,7 +421,7 @@ def build_weekly_event_alert(
             )
 
         return (
-            "📅 ALIFT WEEKLY ALERT\n"
+            "📅 MrBiznes WEEKLY ALERT\n"
             "━━━━━━━━━━━━━━━━\n\n"
             "{}\n\n"
             "🇮🇷 بتوقيت إيران:\n"
@@ -443,7 +443,7 @@ def build_weekly_event_alert(
         )
 
     return (
-        "📅 ALIFT WEEKLY ALERT\n"
+        "📅 MrBiznes WEEKLY ALERT\n"
         "━━━━━━━━━━━━━━━━\n\n"
         "{}\n\n"
         "🇮🇷 Iran Time:\n"

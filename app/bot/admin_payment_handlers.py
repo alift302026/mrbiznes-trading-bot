@@ -108,14 +108,14 @@ def pending_text():
     if not items:
 
         return (
-            "💳 ALIFT PAYMENT REVIEW\n"
+            "💳 MrBiznes PAYMENT REVIEW\n"
             "━━━━━━━━━━━━━━━━\n\n"
 
             "✅ هیچ پرداخت Pending وجود ندارد."
         )
 
     return (
-        "💳 ALIFT PAYMENT REVIEW\n"
+        "💳 MrBiznes PAYMENT REVIEW\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         f"🟡 Pending: {len(items)}\n\n"
@@ -431,7 +431,7 @@ async def admin_payment_callback(
                 await context.bot.send_message(
                     chat_id=telegram_id,
                     text=(
-                        "💎 ALIFT VIP ACTIVATED\n"
+                        "💎 MrBiznes VIP ACTIVATED\n"
                         "━━━━━━━━━━━━━━━━\n\n"
 
                         "✅ پرداخت شما تأیید شد.\n\n"
@@ -442,7 +442,7 @@ async def admin_payment_callback(
                         "🔔 Alert Limit: 50\n"
                         "🔎 Crypto Search: Unlimited\n\n"
 
-                        "از همراهی شما با ALIFT "
+                        "از همراهی شما با MrBiznes "
                         "سپاسگزاریم 🚀"
                     ),
                 )
@@ -549,7 +549,7 @@ async def admin_payment_callback(
                     payment.telegram_id
                 ),
                 text=(
-                    "❌ ALIFT PAYMENT REJECTED\n"
+                    "❌ MrBiznes PAYMENT REJECTED\n"
                     "━━━━━━━━━━━━━━━━\n\n"
 
                     f"Payment #{payment_id}\n\n"

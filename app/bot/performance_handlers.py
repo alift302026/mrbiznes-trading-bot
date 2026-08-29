@@ -93,7 +93,7 @@ def performance_month_text(
     ]:
 
         return (
-            "📈 ALIFT MONTHLY PERFORMANCE\n"
+            "📈 MrBiznes MONTHLY PERFORMANCE\n"
             "━━━━━━━━━━━━━━━━\n\n"
 
             f"📅 {title} {year}\n\n"
@@ -107,7 +107,7 @@ def performance_month_text(
         )
 
     lines = [
-        "📈 ALIFT MONTHLY PERFORMANCE",
+        "📈 MrBiznes MONTHLY PERFORMANCE",
         "━━━━━━━━━━━━━━━━",
         "",
         f"📅 {title} {year}",
@@ -184,7 +184,7 @@ def performance_month_text(
         [
             "━━━━━━━━━━━━━━━━",
             "ℹ️ آمار فقط بر اساس نتایج ثبت‌شده "
-            "در سیستم ALIFT محاسبه می‌شود.",
+            "در سیستم MrBiznes محاسبه می‌شود.",
 
             "",
             "⚠️ عملکرد گذشته تضمینی برای "
@@ -210,7 +210,7 @@ def all_time_text():
     ] == 0:
 
         return (
-            "🏆 ALIFT ALL-TIME PERFORMANCE\n"
+            "🏆 MrBiznes ALL-TIME PERFORMANCE\n"
             "━━━━━━━━━━━━━━━━\n\n"
 
             "هنوز نتیجه واقعی برای محاسبه "
@@ -218,7 +218,7 @@ def all_time_text():
         )
 
     return (
-        "🏆 ALIFT ALL-TIME PERFORMANCE\n"
+        "🏆 MrBiznes ALL-TIME PERFORMANCE\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         f"📡 Signals: {data['total']}\n"
@@ -360,10 +360,10 @@ def performance_home_text():
     )
 
     return (
-        "📈 ALIFT PERFORMANCE CENTER\n"
+        "📈 MrBiznes PERFORMANCE CENTER\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
-        "عملکرد سیگنال‌های ثبت‌شده ALIFT "
+        "عملکرد سیگنال‌های ثبت‌شده MrBiznes "
         "در این بخش قابل مشاهده است.\n\n"
 
         f"📅 Current: {month_name} {year}\n\n"

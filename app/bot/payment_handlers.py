@@ -91,13 +91,13 @@ def payment_home_text(
             )
 
     return (
-        "💎 ALIFT VIP & PAYMENT\n"
+        "💎 MrBiznes VIP & PAYMENT\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         f"👤 Plan: {plan}\n"
         f"📅 VIP Expire: {expiry}\n\n"
 
-        "🚀 ALIFT VIP\n\n"
+        "🚀 MrBiznes VIP\n\n"
 
         "🔔 تا 50 آلارم فعال\n"
         "🔎 جستجوی نامحدود Crypto\n"

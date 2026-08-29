@@ -59,7 +59,7 @@ def referral_text(
     )
 
     return (
-        "🎁 ALIFT REFERRAL & POINTS\n"
+        "🎁 MrBiznes REFERRAL & POINTS\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         "🔗 لینک اختصاصی دعوت شما:\n"
@@ -205,7 +205,7 @@ async def referral_callback(
 
         await query.edit_message_text(
             (
-                "🎁 ALIFT REWARDS\n"
+                "🎁 MrBiznes REWARDS\n"
                 "━━━━━━━━━━━━━━━━\n\n"
 
                 "⭐ امتیازهای شما در مراحل بعد "

@@ -138,7 +138,7 @@ def intelligence_keyboard():
 def home_text():
 
     return (
-        "🌊 ALIFT MARKET INTELLIGENCE\n"
+        "🌊 MrBiznes MARKET INTELLIGENCE\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
         "داده‌های زنده بازار برای شناسایی "
@@ -221,7 +221,7 @@ async def intelligence_callback(
                 "به Provider On-chain معتبر "
                 "متصل خواهد شد.\n\n"
 
-                "⚠️ ALIFT هیچ عدد Inflow/Outflow "
+                "⚠️ MrBiznes هیچ عدد Inflow/Outflow "
                 "را از روی Volume حدس نمی‌زند."
             ),
             reply_markup=(

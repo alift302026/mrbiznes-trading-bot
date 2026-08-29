@@ -41,7 +41,7 @@ WELCOME_IMAGE = (
 
 
 WELCOME_CAPTION = (
-    "🚀 ALIFT TRADER\n\n"
+    "🚀 MrBiznes\n\n"
     "«خوبی، تنها سرمایه‌گذاری است که "
     "هیچگاه شکست نمی‌خورد.»\n\n"
     "“Goodness is the only investment "
@@ -236,9 +236,9 @@ async def about_page(
             )
 
     await update.message.reply_text(
-        "🤝 ABOUT ALIFT\n"
+        "🤝 ABOUT MrBiznes\n"
         "━━━━━━━━━━━━━━━━\n\n"
-        "ALIFT Trader is a market "
+        "MrBiznes is a market "
         "information, analytics and "
         "trader-assistance platform.",
         reply_markup=(
@@ -290,7 +290,7 @@ async def news_page(
         )
 
     await update.message.reply_text(
-        "📰 ALIFT NEWS CENTER",
+        "📰 MrBiznes NEWS CENTER",
         reply_markup=(
             InlineKeyboardMarkup(
                 keyboard

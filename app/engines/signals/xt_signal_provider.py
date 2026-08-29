@@ -71,7 +71,7 @@ def _build_session() -> requests.Session:
         {
             "Accept": "application/json",
             "User-Agent": (
-                "ALIFT-TRADER/1.0"
+                "MrBiznes/1.0"
             ),
         }
     )
