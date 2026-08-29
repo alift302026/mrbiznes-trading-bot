@@ -1,16 +1,13 @@
-from __future__ import annotations
-
 import html
 import logging
 import os
 import re
 import xml.etree.ElementTree as ET
 
-from datetime import datetime
-from email.utils import parsedate_to_datetime
 from typing import Any, Dict, List, Optional
 
 import requests
+from bs4 import BeautifulSoup
 
 from telegram.ext import ContextTypes
 
@@ -18,29 +15,28 @@ from telegram.ext import ContextTypes
 logger = logging.getLogger(__name__)
 
 
-RSS_URL = (
-    "https://arzdigital.com/breaking/feed/"
-)
+RSS_URL = "https://arzdigital.com/breaking/feed/"
+
+CHANNEL_USERNAME = "@MrBiznesMarket"
 
 REQUEST_TIMEOUT = 20
-
-CHANNEL_USERNAME = (
-    "@MrBiznesMarket"
-)
-
-BRAND_NAME = (
-    "مستر بیزنس"
-)
-
 MAX_ITEMS_PER_RUN = 5
-MAX_SUMMARY_LENGTH = 650
+
+# Telegram photo captions are limited, so keep the
+# extracted paragraph reasonably compact.
+MAX_PARAGRAPH_LENGTH = 700
 
 
 _last_seen_link: Optional[str] = None
 _initialized = False
 
 
+# ============================================================
+# CHANNEL
+# ============================================================
+
 def _channel_id() -> Optional[int]:
+
     value = os.getenv(
         "NEWS_CHANNEL_ID",
         "",
@@ -56,9 +52,14 @@ def _channel_id() -> Optional[int]:
         return None
 
 
+# ============================================================
+# TEXT
+# ============================================================
+
 def _clean_text(
     value: Optional[str],
 ) -> str:
+
     if not value:
         return ""
 
@@ -81,9 +82,62 @@ def _clean_text(
     return text
 
 
+def _complete_sentences(
+    text: str,
+    limit: int = MAX_PARAGRAPH_LENGTH,
+) -> str:
+    """
+    Keep source text only through a complete
+    sentence. Never invent or complete text.
+    """
+
+    text = _clean_text(
+        text
+    )
+
+    if not text:
+        return ""
+
+    # If short enough and already ends properly,
+    # return the complete source paragraph.
+    if (
+        len(text) <= limit
+        and text.endswith(
+            (".", "؟", "!")
+        )
+    ):
+        return text
+
+    candidate = text[
+        :limit
+    ].strip()
+
+    last_end = max(
+        candidate.rfind("."),
+        candidate.rfind("؟"),
+        candidate.rfind("!"),
+    )
+
+    if last_end >= 0:
+        return candidate[
+            :last_end + 1
+        ].strip()
+
+    # We do not publish incomplete text.
+    return ""
+
+
 def _short_summary(
     value: Optional[str],
 ) -> str:
+    """
+    RSS fallback only.
+
+    ArzDigital RSS descriptions may already
+    be truncated. Never expose a truncated
+    sentence.
+    """
+
     text = _clean_text(
         value
     )
@@ -91,266 +145,397 @@ def _short_summary(
     if not text:
         return ""
 
-    if len(text) <= MAX_SUMMARY_LENGTH:
-        return text
+    if re.search(
+        r"(?:\.{3}|…)\s*$",
+        text,
+    ):
+        return ""
 
-    shortened = text[
-        :MAX_SUMMARY_LENGTH
-    ]
+    return _complete_sentences(
+        text
+    )
 
-    # Prefer ending on a complete word.
-    if " " in shortened:
-        shortened = shortened.rsplit(
-            " ",
-            1,
-        )[0]
 
-    return shortened.rstrip(
-        "،,؛;:- "
-    ) + "…"
-
+# ============================================================
+# XML
+# ============================================================
 
 def _find_text(
     element: ET.Element,
     names: List[str],
 ) -> str:
-    for child in element:
-        tag = child.tag.lower()
 
-        if any(
-            name.lower()
-            in tag
-            for name in names
-        ):
-            text = (
+    wanted = {
+        name.lower()
+        for name in names
+    }
+
+    for child in element:
+
+        tag = child.tag.split(
+            "}"
+        )[-1].lower()
+
+        if tag in wanted:
+            return (
                 child.text
                 or ""
-            ).strip()
-
-            if text:
-                return text
+            )
 
     return ""
 
 
-def _extract_image(
-    item: ET.Element,
-    description: str,
-) -> Optional[str]:
-    # RSS enclosure
-    for enclosure in item.findall(
-        "enclosure"
-    ):
-        url = (
-            enclosure.attrib.get(
-                "url"
-            )
-            or ""
-        ).strip()
+# ============================================================
+# ARTICLE PAGE
+# ============================================================
 
-        media_type = (
-            enclosure.attrib.get(
-                "type"
-            )
-            or ""
-        ).lower()
+def _fetch_article_data(
+    article_url: str,
+) -> Dict[str, Optional[str]]:
+    """
+    Fetch the original ArzDigital page once.
 
-        if (
-            url
-            and (
-                media_type.startswith(
-                    "image/"
-                )
-                or re.search(
-                    r"\.(jpg|jpeg|png|webp)"
-                    r"($|\?)",
-                    url,
-                    re.I,
-                )
-            )
-        ):
-            return url
+    Extract:
+    - first real article paragraph
+    - og:image
+    """
 
-    # Namespaced media:content / media:thumbnail
-    for child in item:
-        tag = child.tag.lower()
+    result: Dict[
+        str,
+        Optional[str]
+    ] = {
+        "paragraph": None,
+        "image_url": None,
+    }
 
-        if (
-            "thumbnail" in tag
-            or "content" in tag
-        ):
-            url = (
-                child.attrib.get(
-                    "url"
+    if not article_url:
+        return result
+
+    try:
+
+        response = requests.get(
+            article_url,
+            timeout=REQUEST_TIMEOUT,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 "
+                    "(Windows NT 10.0; "
+                    "Win64; x64) "
+                    "AppleWebKit/537.36 "
+                    "Chrome/120 Safari/537.36"
+                ),
+            },
+        )
+
+        response.raise_for_status()
+
+        soup = BeautifulSoup(
+            response.text,
+            "html.parser",
+        )
+
+        # ----------------------------
+        # IMAGE
+        # ----------------------------
+
+        og_image = soup.find(
+            "meta",
+            attrs={
+                "property": "og:image",
+            },
+        )
+
+        if og_image:
+
+            image_url = (
+                og_image.get(
+                    "content"
                 )
                 or ""
             ).strip()
 
-            media_type = (
-                child.attrib.get(
-                    "type"
+            if image_url.startswith(
+                (
+                    "http://",
+                    "https://",
                 )
-                or ""
-            ).lower()
+            ):
+                result[
+                    "image_url"
+                ] = image_url
 
-            medium = (
-                child.attrib.get(
-                    "medium"
+        # ----------------------------
+        # FIRST ARTICLE PARAGRAPH
+        # ----------------------------
+
+        # In current ArzDigital Breaking
+        # pages, the first <p> is the actual
+        # opening paragraph. We still filter
+        # obvious site boilerplate.
+        for paragraph in soup.find_all(
+            "p"
+        ):
+
+            text = _clean_text(
+                paragraph.get_text(
+                    " ",
+                    strip=True,
                 )
-                or ""
-            ).lower()
+            )
 
-            if (
-                url
-                and (
-                    "image" in media_type
-                    or medium == "image"
-                    or "thumbnail" in tag
-                    or re.search(
-                        r"\.(jpg|jpeg|png|webp)"
-                        r"($|\?)",
-                        url,
-                        re.I,
-                    )
+            if not text:
+                continue
+
+            if len(text) < 80:
+                continue
+
+            lowered = text.lower()
+
+            ignored = (
+                "لطفا در صورت مشاهده دیدگاه",
+                "قیمت بیت کوین، اتریوم",
+                "مجموعه ارزدیجیتال",
+                "مسئولیت کامل تمامی معاملات",
+            )
+
+            if any(
+                phrase in lowered
+                for phrase in ignored
+            ):
+                continue
+
+            complete = (
+                _complete_sentences(
+                    text
+                )
+            )
+
+            if complete:
+
+                result[
+                    "paragraph"
+                ] = complete
+
+                break
+
+    except Exception:
+
+        logger.exception(
+            "Article page fetch failed: %s",
+            article_url,
+        )
+
+    return result
+
+
+# ============================================================
+# RSS IMAGE FALLBACK
+# ============================================================
+
+def _extract_rss_image(
+    item_element: ET.Element,
+    description: str,
+) -> Optional[str]:
+
+    for child in item_element:
+
+        tag = child.tag.split(
+            "}"
+        )[-1].lower()
+
+        if tag in {
+            "thumbnail",
+            "content",
+            "enclosure",
+        }:
+
+            url = (
+                child.attrib.get(
+                    "url",
+                    "",
+                )
+                or child.attrib.get(
+                    "href",
+                    "",
+                )
+            ).strip()
+
+            if url.startswith(
+                (
+                    "http://",
+                    "https://",
                 )
             ):
                 return url
 
-    # Image embedded in RSS description HTML
-    if description:
-        match = re.search(
-            r"""<img[^>]+src=["']([^"']+)["']""",
-            description,
-            re.I,
-        )
+    match = re.search(
+        (
+            r'<img[^>]+'
+            r'src=["\']([^"\']+)["\']'
+        ),
+        description or "",
+        flags=re.IGNORECASE,
+    )
 
-        if match:
-            return html.unescape(
-                match.group(1)
-            ).strip()
+    if match:
+
+        url = html.unescape(
+            match.group(1)
+        ).strip()
+
+        if url.startswith(
+            (
+                "http://",
+                "https://",
+            )
+        ):
+            return url
 
     return None
 
 
+# ============================================================
+# HASHTAGS
+# ============================================================
+
 def _hashtags(
     title: str,
-    summary: str,
+    paragraph: str,
 ) -> List[str]:
+
     text = (
-        f"{title} {summary}"
+        f"{title} {paragraph}"
     ).lower()
 
     rules = [
         (
             (
+                "bitcoin",
+                "btc",
                 "بیت کوین",
                 "بیت‌کوین",
-                "bitcoin",
-                " btc",
             ),
             "#بیت_کوین",
         ),
         (
             (
-                "اتریوم",
                 "ethereum",
-                " eth",
+                "eth",
+                "اتریوم",
             ),
             "#اتریوم",
         ),
         (
             (
-                "ریپل",
                 "xrp",
+                "ripple",
+                "ریپل",
             ),
             "#ریپل",
         ),
         (
             (
-                "سولانا",
                 "solana",
+                "sol",
+                "سولانا",
             ),
             "#سولانا",
         ),
         (
             (
-                "تتر",
                 "usdt",
+                "tether",
+                "تتر",
             ),
             "#تتر",
         ),
         (
             (
+                "dogecoin",
+                "doge",
                 "دوج کوین",
                 "دوج‌کوین",
-                "dogecoin",
             ),
             "#دوج_کوین",
         ),
         (
             (
-                "طلا",
                 "gold",
+                "طلا",
             ),
             "#طلا",
         ),
         (
             (
-                "فدرال رزرو",
-                "fed ",
+                "oil",
+                "brent",
+                "wti",
+                "نفت",
+            ),
+            "#نفت",
+        ),
+        (
+            (
+                "fed",
+                "federal reserve",
                 "powell",
+                "فدرال رزرو",
                 "پاول",
             ),
             "#فدرال_رزرو",
         ),
         (
             (
-                "تورم",
+                "inflation",
                 "cpi",
                 "ppi",
+                "تورم",
             ),
             "#تورم",
         ),
         (
             (
-                "نرخ بهره",
                 "interest rate",
+                "نرخ بهره",
             ),
             "#نرخ_بهره",
         ),
         (
             (
-                "ترامپ",
                 "trump",
+                "ترامپ",
             ),
             "#ترامپ",
         ),
         (
             (
-                "تحریم",
                 "sanction",
+                "تحریم",
             ),
             "#تحریم",
         ),
         (
             (
-                "صرافی",
                 "exchange",
+                "binance",
+                "صرافی",
+                "بایننس",
             ),
             "#صرافی",
         ),
         (
             (
-                "هک",
                 "hack",
                 "exploit",
+                "هک",
+                "حمله",
             ),
             "#امنیت",
         ),
         (
             (
-                "دیفای",
                 "defi",
+                "دیفای",
             ),
             "#دیفای",
         ),
@@ -363,197 +548,215 @@ def _hashtags(
         ),
         (
             (
-                "فارکس",
                 "forex",
+                "فارکس",
             ),
             "#فارکس",
         ),
         (
             (
-                "اقتصاد",
-                "تعرفه",
                 "gdp",
+                "unemployment",
+                "tariff",
+                "اقتصاد",
                 "بیکاری",
-                "اشتغال",
+                "تعرفه",
             ),
             "#اقتصاد",
         ),
     ]
 
-    tags: List[str] = []
+    output: List[str] = []
 
-    for keywords, tag in rules:
+    for keywords, hashtag in rules:
+
         if any(
             keyword in text
             for keyword in keywords
         ):
-            if tag not in tags:
-                tags.append(tag)
 
-        if len(tags) == 2:
+            if hashtag not in output:
+                output.append(
+                    hashtag
+                )
+
+        if len(output) >= 2:
             break
 
-    fallbacks = [
+    for fallback in (
         "#کریپتو",
         "#اقتصاد",
-    ]
+    ):
 
-    for tag in fallbacks:
-        if len(tags) >= 2:
+        if len(output) >= 2:
             break
 
-        if tag not in tags:
-            tags.append(tag)
+        if fallback not in output:
+            output.append(
+                fallback
+            )
 
-    return tags[:2]
+    return output[:2]
 
+
+# ============================================================
+# RSS
+# ============================================================
 
 def _fetch_feed() -> List[
     Dict[str, Any]
 ]:
+
     response = requests.get(
         RSS_URL,
         timeout=REQUEST_TIMEOUT,
         headers={
             "User-Agent": (
-                "MrBiznes/1.0"
-            ),
-            "Accept": (
-                "application/rss+xml,"
-                "application/xml,"
-                "text/xml"
+                "Mozilla/5.0 "
+                "(compatible; "
+                "MrBiznesNewsBot/1.0)"
             ),
         },
     )
 
     response.raise_for_status()
 
-    try:
-        root = ET.fromstring(
-            response.content
-        )
+    root = ET.fromstring(
+        response.content
+    )
 
-    except ET.ParseError as exc:
-        raise RuntimeError(
-            "Invalid RSS XML"
-        ) from exc
-
-    result: List[
+    items: List[
         Dict[str, Any]
     ] = []
 
-    for item in root.findall(
+    for element in root.findall(
         ".//item"
     ):
-        title = (
-            item.findtext(
-                "title"
-            )
-            or ""
-        ).strip()
 
-        link = (
-            item.findtext(
-                "link"
+        title = _clean_text(
+            _find_text(
+                element,
+                ["title"],
             )
-            or ""
-        ).strip()
+        )
+
+        link = _clean_text(
+            _find_text(
+                element,
+                ["link"],
+            )
+        )
 
         description_raw = (
-            item.findtext(
-                "description"
+            _find_text(
+                element,
+                [
+                    "description",
+                    "encoded",
+                ],
             )
-            or ""
         )
 
-        # Some feeds put fuller text in
-        # namespaced content:encoded.
-        content_raw = _find_text(
-            item,
-            [
-                "encoded",
-            ],
-        )
-
-        summary_source = (
+        rss_summary = _clean_text(
             description_raw
-            or content_raw
         )
 
-        summary = _short_summary(
-            summary_source
-        )
-
-        published_text = (
-            item.findtext(
-                "pubDate"
-            )
-            or ""
-        ).strip()
-
-        published_at = None
-
-        if published_text:
-            try:
-                published_at = (
-                    parsedate_to_datetime(
-                        published_text
-                    )
-                )
-
-            except (
-                TypeError,
-                ValueError,
-            ):
-                published_at = None
-
-        if not title or not link:
+        if (
+            not title
+            or not link
+        ):
             continue
 
-        image_url = _extract_image(
-            item,
-            description_raw
-            or content_raw,
+        rss_image = (
+            _extract_rss_image(
+                element,
+                description_raw,
+            )
         )
 
-        result.append(
+        items.append(
             {
-                "title": (
-                    _clean_text(
-                        title
-                    )
-                ),
-                "summary": summary,
+                "title": title,
                 "link": link,
-
-                # Retained internally for
-                # provenance/deduplication.
-                # Not displayed in channel post.
-                "source_url": link,
-
-                "published_at": (
-                    published_at
-                ),
-
-                "image_url": (
-                    image_url
-                ),
+                "summary": rss_summary,
+                "image_url": rss_image,
             }
         )
 
-    return result
+    return items
 
+
+# ============================================================
+# ENRICH ARTICLE
+# ============================================================
+
+def _enrich_item(
+    item: Dict[str, Any],
+) -> Dict[str, Any]:
+
+    enriched = dict(
+        item
+    )
+
+    article_data = (
+        _fetch_article_data(
+            enriched.get(
+                "link",
+                "",
+            )
+        )
+    )
+
+    paragraph = article_data.get(
+        "paragraph"
+    )
+
+    if paragraph:
+
+        enriched[
+            "summary"
+        ] = paragraph
+
+    else:
+
+        enriched[
+            "summary"
+        ] = _short_summary(
+            enriched.get(
+                "summary"
+            )
+        )
+
+    article_image = (
+        article_data.get(
+            "image_url"
+        )
+    )
+
+    if article_image:
+
+        enriched[
+            "image_url"
+        ] = article_image
+
+    return enriched
+
+
+# ============================================================
+# FORMAT
+# ============================================================
 
 def _format_message(
     item: Dict[str, Any],
 ) -> str:
+
     title = _clean_text(
         item.get(
             "title"
         )
     )
 
-    summary = _short_summary(
+    paragraph = _clean_text(
         item.get(
             "summary"
         )
@@ -561,7 +764,7 @@ def _format_message(
 
     tags = _hashtags(
         title,
-        summary,
+        paragraph,
     )
 
     parts = [
@@ -570,29 +773,21 @@ def _format_message(
         f"📰 {title}",
     ]
 
-    if summary:
+    if paragraph:
+
         parts.extend(
             [
                 "",
-                f"📌 {summary}",
+                f"📌 {paragraph}",
             ]
         )
 
     parts.extend(
         [
             "",
-            (
-                "⚡ جدیدترین تحولات "
-                "کریپتو و اقتصاد، "
-                "کوتاه و سریع"
-            ),
-            "",
             " ".join(tags),
             "",
-            (
-                f"☕️ {CHANNEL_USERNAME} "
-                f"| {BRAND_NAME}"
-            ),
+            f"☕️ {CHANNEL_USERNAME}",
         ]
     )
 
@@ -601,23 +796,32 @@ def _format_message(
     )
 
 
+# ============================================================
+# TELEGRAM
+# ============================================================
+
 async def _send_item(
     context: ContextTypes.DEFAULT_TYPE,
     channel_id: int,
     item: Dict[str, Any],
 ) -> None:
-    text = _format_message(
+
+    enriched = _enrich_item(
         item
     )
 
-    image_url = (
-        item.get(
-            "image_url"
-        )
+    text = _format_message(
+        enriched
+    )
+
+    image_url = enriched.get(
+        "image_url"
     )
 
     if image_url:
+
         try:
+
             await context.bot.send_photo(
                 chat_id=channel_id,
                 photo=image_url,
@@ -627,8 +831,9 @@ async def _send_item(
             return
 
         except Exception:
+
             logger.exception(
-                "News image send failed; "
+                "News photo send failed; "
                 "falling back to text"
             )
 
@@ -639,51 +844,50 @@ async def _send_item(
     )
 
 
+# ============================================================
+# JOB
+# ============================================================
+
 async def arzdigital_breaking_job(
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
-    """
-    Poll the official Breaking News RSS.
 
-    First successful execution establishes
-    a baseline without flooding old news.
-
-    Later runs send only genuinely new feed
-    entries, at most MAX_ITEMS_PER_RUN.
-
-    Original source URL remains in memory
-    for deduplication/provenance but is not
-    displayed in the Telegram post.
-    """
     global _initialized
     global _last_seen_link
 
     channel_id = _channel_id()
 
     if channel_id is None:
+
         logger.warning(
             "NEWS_CHANNEL_ID is "
             "missing or invalid"
         )
+
         return
 
     try:
+
         items = _fetch_feed()
 
     except Exception:
+
         logger.exception(
             "Breaking RSS fetch failed"
         )
+
         return
 
     if not items:
         return
 
-    newest_link = (
-        items[0]["link"]
-    )
+    newest_link = items[0][
+        "link"
+    ]
 
+    # First run only establishes baseline.
     if not _initialized:
+
         _last_seen_link = (
             newest_link
         )
@@ -695,8 +899,10 @@ async def arzdigital_breaking_job(
             "initialized: %s",
             newest_link,
         )
+
         return
 
+    # Nothing new.
     if (
         newest_link
         == _last_seen_link
@@ -710,10 +916,12 @@ async def arzdigital_breaking_job(
     baseline_found = False
 
     for item in items:
+
         if (
             item["link"]
             == _last_seen_link
         ):
+
             baseline_found = True
             break
 
@@ -721,27 +929,34 @@ async def arzdigital_breaking_job(
             item
         )
 
+    # Old baseline disappeared from the
+    # 20-item feed. Refresh safely rather
+    # than flooding old articles.
     if not baseline_found:
-        # Do not flood the channel when the
-        # old baseline falls out of the feed.
+
         _last_seen_link = (
             newest_link
         )
 
         logger.warning(
-            "Previous RSS baseline "
-            "not found; baseline refreshed"
+            "Previous RSS baseline not "
+            "found; baseline refreshed"
         )
+
         return
 
     new_items = new_items[
         :MAX_ITEMS_PER_RUN
     ]
 
+    # RSS newest first.
+    # Publish oldest new item first.
     for item in reversed(
         new_items
     ):
+
         try:
+
             await _send_item(
                 context,
                 channel_id,
@@ -749,21 +964,20 @@ async def arzdigital_breaking_job(
             )
 
         except Exception:
-            logger.exception(
-                "Failed to send "
-                "Breaking News"
-            )
 
-            # Do not advance baseline after
-            # failed Telegram delivery.
-            return
+            logger.exception(
+                "Breaking News send "
+                "failed: %s",
+                item.get(
+                    "link"
+                ),
+            )
 
     _last_seen_link = (
         newest_link
     )
 
     logger.info(
-        "Breaking News: %s "
-        "new item(s) sent",
+        "Breaking News sent: %d",
         len(new_items),
     )
