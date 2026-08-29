@@ -1270,7 +1270,7 @@ def build_application():
     if application.job_queue is not None:
         application.job_queue.run_repeating(
             arzdigital_breaking_job,
-            interval=3600,
+            interval=300,
             first=30,
             name="arzdigital-breaking-news-worker",
         )
