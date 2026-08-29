@@ -1287,7 +1287,7 @@ def build_application():
     if application.job_queue is not None:
         application.job_queue.run_repeating(
             wallex_news_job,
-            interval=300,
+            interval=900,
             first=45,
             name="wallex-news-worker",
         )
@@ -1349,4 +1349,6 @@ def main():
 if __name__ == "__main__":
 
     main()
+
+
 
