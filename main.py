@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 
 from telegram import (
     InlineKeyboardButton,
@@ -176,6 +176,10 @@ from app.engines.news.arzdigital_breaking_worker import (
     arzdigital_breaking_job,
 )
 
+from app.engines.news.wallex_news_worker import (
+    wallex_news_job,
+)
+
 from app.engines.news.economic_calendar_worker import (
     economic_calendar_sync_job,
 )
@@ -240,7 +244,7 @@ def join_keyboard():
         rows.append(
             [
                 InlineKeyboardButton(
-                    "📢 عضویت در کانال",
+                    "ðŸ“¢ Ø¹Ø¶ÙˆÛŒØª Ø¯Ø± Ú©Ø§Ù†Ø§Ù„",
                     url=REQUIRED_CHANNEL_URL,
                 )
             ]
@@ -249,7 +253,7 @@ def join_keyboard():
     rows.append(
         [
             InlineKeyboardButton(
-                "✅ بررسی عضویت",
+                "âœ… Ø¨Ø±Ø±Ø³ÛŒ Ø¹Ø¶ÙˆÛŒØª",
                 callback_data=(
                     "check_membership"
                 ),
@@ -319,12 +323,12 @@ async def require_channel(
 
         await update.message.reply_text(
             (
-                "🔒 برای استفاده از مستر بیزنس "
-                "ابتدا باید عضو کانال رسمی شوید.\n\n"
+                "ðŸ”’ Ø¨Ø±Ø§ÛŒ Ø§Ø³ØªÙØ§Ø¯Ù‡ Ø§Ø² Ù…Ø³ØªØ± Ø¨ÛŒØ²Ù†Ø³ "
+                "Ø§Ø¨ØªØ¯Ø§ Ø¨Ø§ÛŒØ¯ Ø¹Ø¶Ùˆ Ú©Ø§Ù†Ø§Ù„ Ø±Ø³Ù…ÛŒ Ø´ÙˆÛŒØ¯.\n\n"
 
-                "1️⃣ روی عضویت در کانال بزنید.\n"
-                "2️⃣ عضو کانال شوید.\n"
-                "3️⃣ بررسی عضویت را بزنید."
+                "1ï¸âƒ£ Ø±ÙˆÛŒ Ø¹Ø¶ÙˆÛŒØª Ø¯Ø± Ú©Ø§Ù†Ø§Ù„ Ø¨Ø²Ù†ÛŒØ¯.\n"
+                "2ï¸âƒ£ Ø¹Ø¶Ùˆ Ú©Ø§Ù†Ø§Ù„ Ø´ÙˆÛŒØ¯.\n"
+                "3ï¸âƒ£ Ø¨Ø±Ø±Ø³ÛŒ Ø¹Ø¶ÙˆÛŒØª Ø±Ø§ Ø¨Ø²Ù†ÛŒØ¯."
             ),
             reply_markup=(
                 join_keyboard()
@@ -421,7 +425,7 @@ async def start(
     if user.is_banned:
 
         await update.message.reply_text(
-            "⛔ حساب کاربری شما در دسترس نیست."
+            "â›” Ø­Ø³Ø§Ø¨ Ú©Ø§Ø±Ø¨Ø±ÛŒ Ø´Ù…Ø§ Ø¯Ø± Ø¯Ø³ØªØ±Ø³ Ù†ÛŒØ³Øª."
         )
 
         return
@@ -455,7 +459,7 @@ async def start(
 
     await update.message.reply_text(
         (
-            "🚀 {}\n\n{}"
+            "ðŸš€ {}\n\n{}"
         ).format(
             t(
                 language,
@@ -500,21 +504,21 @@ async def membership_callback(
     if not member:
 
         await query.answer(
-            "❌ عضویت تأیید نشد.",
+            "âŒ Ø¹Ø¶ÙˆÛŒØª ØªØ£ÛŒÛŒØ¯ Ù†Ø´Ø¯.",
             show_alert=True,
         )
 
         return
 
     await query.answer(
-        "✅ عضویت تأیید شد.",
+        "âœ… Ø¹Ø¶ÙˆÛŒØª ØªØ£ÛŒÛŒØ¯ Ø´Ø¯.",
         show_alert=True,
     )
 
     await query.edit_message_text(
         (
-            "✅ عضویت تأیید شد.\n\n"
-            "دوباره /start را بزنید."
+            "âœ… Ø¹Ø¶ÙˆÛŒØª ØªØ£ÛŒÛŒØ¯ Ø´Ø¯.\n\n"
+            "Ø¯ÙˆØ¨Ø§Ø±Ù‡ /start Ø±Ø§ Ø¨Ø²Ù†ÛŒØ¯."
         )
     )
 
@@ -547,28 +551,28 @@ async def account_page(
         )
 
     text = (
-        "👤 MrBiznes ACCOUNT\n"
-        "━━━━━━━━━━━━━━━━\n\n"
+        "ðŸ‘¤ MrBiznes ACCOUNT\n"
+        "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n\n"
 
-        f"🆔 Telegram ID\n"
+        f"ðŸ†” Telegram ID\n"
         f"{user.telegram_id}\n\n"
 
-        f"👤 Name\n"
+        f"ðŸ‘¤ Name\n"
         f"{user.first_name or '-'}\n\n"
 
-        f"🔗 Username\n"
+        f"ðŸ”— Username\n"
         f"{username}\n\n"
 
-        f"💎 Plan\n"
+        f"ðŸ’Ž Plan\n"
         f"{user.membership_type.upper()}\n\n"
 
-        f"📆 VIP Expire\n"
+        f"ðŸ“† VIP Expire\n"
         f"{vip_expire}\n\n"
 
-        f"⭐ Points\n"
+        f"â­ Points\n"
         f"{user.points}\n\n"
 
-        f"🎁 Referral\n"
+        f"ðŸŽ Referral\n"
         f"{user.referral_code or '-'}"
     )
 
@@ -598,7 +602,7 @@ async def temporary_module(
     await update.message.reply_text(
         (
             f"{title}\n"
-            "━━━━━━━━━━━━━━━━\n\n"
+            "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n\n"
             f"{t(language, 'module_soon')}"
         ),
         reply_markup=(
@@ -644,7 +648,7 @@ async def menu_router(
     if user is None:
 
         await update.message.reply_text(
-            "❌ حساب پیدا نشد. /start"
+            "âŒ Ø­Ø³Ø§Ø¨ Ù¾ÛŒØ¯Ø§ Ù†Ø´Ø¯. /start"
         )
 
         return
@@ -652,7 +656,7 @@ async def menu_router(
     if user.is_banned:
 
         await update.message.reply_text(
-            "⛔ حساب کاربری در دسترس نیست."
+            "â›” Ø­Ø³Ø§Ø¨ Ú©Ø§Ø±Ø¨Ø±ÛŒ Ø¯Ø± Ø¯Ø³ØªØ±Ø³ Ù†ÛŒØ³Øª."
         )
 
         return
@@ -960,24 +964,24 @@ async def menu_router(
 
     modules = {
         "signals":
-            "📡 MrBiznes SIGNAL CENTER",
+            "ðŸ“¡ MrBiznes SIGNAL CENTER",
 
         "watchlist":
-            "👁 MrBiznes WATCHLIST",
+            "ðŸ‘ MrBiznes WATCHLIST",
 
         "news":
-            "📰 MrBiznes NEWS CENTER",
+            "ðŸ“° MrBiznes NEWS CENTER",
 
         "analysis":
-            "🤖 MrBiznes ANALYSIS",
+            "ðŸ¤– MrBiznes ANALYSIS",
 
         "trader":
-            "🤖 MrBiznes BOT",
+            "ðŸ¤– MrBiznes BOT",
 
         "exchange":
-            "🔗 EXCHANGE CONNECTION",
+            "ðŸ”— EXCHANGE CONNECTION",
         "education":
-            "🎓 MrBiznes EDUCATION",
+            "ðŸŽ“ MrBiznes EDUCATION",
     }
 
     for key, title in (
@@ -1279,6 +1283,17 @@ def build_application():
             "Breaking News Worker: ON"
         )
 
+    # WALLEX NEWS WORKER
+    if application.job_queue is not None:
+        application.job_queue.run_repeating(
+            wallex_news_job,
+            interval=300,
+            first=45,
+            name="wallex-news-worker",
+        )
+
+        logger.info("Wallex News Worker: ON")
+
     return application
 
 
@@ -1334,3 +1349,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
