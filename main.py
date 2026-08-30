@@ -1,4 +1,4 @@
-﻿import logging
+import logging
 
 from telegram import (
     InlineKeyboardButton,
@@ -93,6 +93,14 @@ from app.bot.navigation import (
 from app.bot.signal_handlers import (
     signal_center,
     signal_callback,
+)
+
+from app.bot.final_signal_handlers import (
+    signal_preview_command,
+)
+
+from app.engines.signals.final_signal_worker import (
+    final_signal_job,
 )
 
 from app.bot.session_handlers import (
@@ -1067,6 +1075,14 @@ def build_application():
         )
     )
 
+    # FINAL S4 SIGNAL PREVIEW (admin)
+    application.add_handler(
+        CommandHandler(
+            "signalpreview",
+            signal_preview_command,
+        )
+    )
+
     # ADMIN PAYMENT COMMAND
     application.add_handler(
         CommandHandler(
@@ -1281,6 +1297,19 @@ def build_application():
 
         logger.info(
             "Breaking News Worker: ON"
+        )
+
+    # FINAL S4 SIGNAL WORKER (hourly, paper mode unless FINAL_SIGNALS_PUSH=1)
+    if application.job_queue is not None:
+        application.job_queue.run_repeating(
+            final_signal_job,
+            interval=3600,
+            first=60,
+            name="final-signal-worker",
+        )
+
+        logger.info(
+            "Final S4 Signal Worker: ON"
         )
 
     # WALLEX NEWS WORKER

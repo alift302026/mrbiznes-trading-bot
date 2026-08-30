@@ -1,0 +1,560 @@
+{
+  "S2_V2": {
+    "BTCUSDT": {
+      "signals": 50,
+      "train": {
+        "trades": 23,
+        "win_rate": 56.52173913043478,
+        "profit_factor": 3.4626283453955677,
+        "expectancy_r": 23.07290052635376,
+        "avg_r": 23.07290052635376,
+        "max_dd_r": 55.952274058549506,
+        "sharpe_like": 1.7210864104437233,
+        "sortino_like": 2.2891383420309355,
+        "long_wr": 12.5,
+        "short_wr": 80.0,
+        "total_r": 530.6767121061365
+      },
+      "oos": {
+        "trades": 3,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "expectancy_r": -21.615629098215766,
+        "avg_r": -21.615629098215766,
+        "max_dd_r": 27.01338233979913,
+        "sharpe_like": -1.9484528336344942,
+        "sortino_like": -1.9484528336344942,
+        "long_wr": 0.0,
+        "short_wr": 0.0,
+        "total_r": -64.8468872946473
+      },
+      "wf": [
+        {
+          "fold": 1,
+          "trades": 5,
+          "win_rate": 80.0,
+          "profit_factor": 169.36698063147074,
+          "expectancy_r": 68.68240670661191,
+          "avg_r": 68.68240670661191,
+          "max_dd_r": 2.0396637882622315,
+          "sharpe_like": 2.360108180106259,
+          "sortino_like": 0.0,
+          "long_wr": 50.0,
+          "short_wr": 100.0,
+          "total_r": 343.41203353305957
+        },
+        {
+          "fold": 2,
+          "trades": 5,
+          "win_rate": 0.0,
+          "profit_factor": 0.0,
+          "expectancy_r": -9.887968777324321,
+          "avg_r": -9.887968777324321,
+          "max_dd_r": 33.34181274395989,
+          "sharpe_like": -3.689915194578457,
+          "sortino_like": -3.689915194578457,
+          "long_wr": 0.0,
+          "short_wr": 0.0,
+          "total_r": -49.4398438866216
+        },
+        {
+          "fold": 3,
+          "trades": 3,
+          "win_rate": 0.0,
+          "profit_factor": 0.0,
+          "expectancy_r": -21.615629098215766,
+          "avg_r": -21.615629098215766,
+          "max_dd_r": 27.01338233979913,
+          "sharpe_like": -1.9484528336344942,
+          "sortino_like": -1.9484528336344942,
+          "long_wr": 0.0,
+          "short_wr": 0.0,
+          "total_r": -64.8468872946473
+        }
+      ]
+    },
+    "ETHUSDT": {
+      "signals": 74,
+      "train": {
+        "trades": 21,
+        "win_rate": 61.904761904761905,
+        "profit_factor": 0.5569129348413936,
+        "expectancy_r": -6.638522422030672,
+        "avg_r": -6.638522422030672,
+        "max_dd_r": 114.32008632734428,
+        "sharpe_like": -0.7370352488058083,
+        "sortino_like": -0.6742508489888484,
+        "long_wr": 50.0,
+        "short_wr": 66.66666666666666,
+        "total_r": -139.4089708626441
+      },
+      "oos": {
+        "trades": 5,
+        "win_rate": 60.0,
+        "profit_factor": 0.08564154296660273,
+        "expectancy_r": -2.1017039034997897,
+        "avg_r": -2.1017039034997897,
+        "max_dd_r": 7.694568886062587,
+        "sharpe_like": -1.3047033588751928,
+        "sortino_like": -1.7057389732476547,
+        "long_wr": 60.0,
+        "short_wr": null,
+        "total_r": -10.508519517498948
+      },
+      "wf": [
+        {
+          "fold": 1,
+          "trades": 5,
+          "win_rate": 60.0,
+          "profit_factor": 45.840762395155906,
+          "expectancy_r": 18.805096359746692,
+          "avg_r": 18.805096359746692,
+          "max_dd_r": 1.9589144268387457,
+          "sharpe_like": 1.454033536963134,
+          "sortino_like": 32.65702858543742,
+          "long_wr": 0.0,
+          "short_wr": 75.0,
+          "total_r": 94.02548179873345
+        },
+        {
+          "fold": 2,
+          "trades": 5,
+          "win_rate": 60.0,
+          "profit_factor": 0.1489440160008339,
+          "expectancy_r": -15.862900878288789,
+          "avg_r": -15.862900878288789,
+          "max_dd_r": 92.55727830269562,
+          "sharpe_like": -1.235897973401511,
+          "sortino_like": -3.209000255985487,
+          "long_wr": 100.0,
+          "short_wr": 33.33333333333333,
+          "total_r": -79.31450439144395
+        },
+        {
+          "fold": 3,
+          "trades": 5,
+          "win_rate": 60.0,
+          "profit_factor": 0.08564154296660273,
+          "expectancy_r": -2.1017039034997897,
+          "avg_r": -2.1017039034997897,
+          "max_dd_r": 7.694568886062587,
+          "sharpe_like": -1.3047033588751928,
+          "sortino_like": -1.7057389732476547,
+          "long_wr": 60.0,
+          "short_wr": null,
+          "total_r": -10.508519517498948
+        }
+      ]
+    },
+    "SOLUSDT": {
+      "signals": 49,
+      "train": {
+        "trades": 16,
+        "win_rate": 68.75,
+        "profit_factor": 0.28160868460618876,
+        "expectancy_r": -5.893987272532934,
+        "avg_r": -5.893987272532934,
+        "max_dd_r": 49.963004615312975,
+        "sharpe_like": -0.9965191392227902,
+        "sortino_like": -0.7099934780688731,
+        "long_wr": 66.66666666666666,
+        "short_wr": 69.23076923076923,
+        "total_r": -94.30379636052695
+      },
+      "oos": {
+        "trades": 8,
+        "win_rate": 50.0,
+        "profit_factor": 0.05211384949409421,
+        "expectancy_r": -2.3259187523913885,
+        "avg_r": -2.3259187523913885,
+        "max_dd_r": 19.304979635084187,
+        "sharpe_like": -0.9584348412543687,
+        "sortino_like": -0.6853868369525645,
+        "long_wr": 50.0,
+        "short_wr": 50.0,
+        "total_r": -18.607350019131108
+      },
+      "wf": [
+        {
+          "fold": 1,
+          "trades": 4,
+          "win_rate": 75.0,
+          "profit_factor": 303.42221745397893,
+          "expectancy_r": 8.33103693083088,
+          "avg_r": 8.33103693083088,
+          "max_dd_r": 0.11019080543708604,
+          "sharpe_like": 1.0107058937453153,
+          "sortino_like": 0.0,
+          "long_wr": null,
+          "short_wr": 75.0,
+          "total_r": 33.32414772332352
+        },
+        {
+          "fold": 2,
+          "trades": 0
+        },
+        {
+          "fold": 3,
+          "trades": 6,
+          "win_rate": 66.66666666666666,
+          "profit_factor": 0.05270514464914009,
+          "expectancy_r": -3.0645197343092643,
+          "avg_r": -3.0645197343092643,
+          "max_dd_r": 19.304979635084187,
+          "sharpe_like": -0.9431988061782718,
+          "sortino_like": -0.5529116351208091,
+          "long_wr": 50.0,
+          "short_wr": 75.0,
+          "total_r": -18.387118405855585
+        }
+      ]
+    },
+    "XRPUSDT": {
+      "signals": 40,
+      "train": {
+        "trades": 17,
+        "win_rate": 47.05882352941176,
+        "profit_factor": 0.6422858245845731,
+        "expectancy_r": -12.43367798027439,
+        "avg_r": -12.43367798027439,
+        "max_dd_r": 332.7879792585611,
+        "sharpe_like": -0.6033524197125791,
+        "sortino_like": -0.7731320476394903,
+        "long_wr": 11.11111111111111,
+        "short_wr": 87.5,
+        "total_r": -211.37252566466464
+      },
+      "oos": {
+        "trades": 0
+      },
+      "wf": [
+        {
+          "fold": 1,
+          "trades": 6,
+          "win_rate": 83.33333333333334,
+          "profit_factor": 4395.171502894245,
+          "expectancy_r": 59.69843327008331,
+          "avg_r": 59.69843327008331,
+          "max_dd_r": 0.0815149339038328,
+          "sharpe_like": 2.1766326756832117,
+          "sortino_like": 0.0,
+          "long_wr": 50.0,
+          "short_wr": 100.0,
+          "total_r": 358.1905996204998
+        },
+        {
+          "fold": 2,
+          "trades": 2,
+          "win_rate": 0.0,
+          "profit_factor": 0.0,
+          "expectancy_r": -23.718551542202423,
+          "avg_r": -23.718551542202423,
+          "max_dd_r": 0.14596456285430293,
+          "sharpe_like": -1.0061921316901783,
+          "sortino_like": -1.0061921316901783,
+          "long_wr": 0.0,
+          "short_wr": null,
+          "total_r": -47.437103084404846
+        },
+        {
+          "fold": 3,
+          "trades": 0
+        }
+      ]
+    }
+  },
+  "S4_V2": {
+    "BTCUSDT": {
+      "signals": 19,
+      "train": {
+        "trades": 13,
+        "win_rate": 61.53846153846154,
+        "profit_factor": 1.3747295194878248,
+        "expectancy_r": 0.8464120921245546,
+        "avg_r": 0.8464120921245546,
+        "max_dd_r": 21.079307904035,
+        "sharpe_like": 0.24200830606667156,
+        "sortino_like": 0.349847647262664,
+        "long_wr": 42.857142857142854,
+        "short_wr": 83.33333333333334,
+        "total_r": 11.00335719761921
+      },
+      "oos": {
+        "trades": 3,
+        "win_rate": 66.66666666666666,
+        "profit_factor": 59.198730109608135,
+        "expectancy_r": 1.7101033326934896,
+        "avg_r": 1.7101033326934896,
+        "max_dd_r": 0.08815157974097243,
+        "sharpe_like": 1.0000378784921178,
+        "sortino_like": 0.0,
+        "long_wr": 0.0,
+        "short_wr": 100.0,
+        "total_r": 5.1303099980804685
+      },
+      "wf": [
+        {
+          "fold": 1,
+          "trades": 2,
+          "win_rate": 50.0,
+          "profit_factor": 1.8000796971925388,
+          "expectancy_r": 8.432563142444307,
+          "avg_r": 8.432563142444307,
+          "max_dd_r": 0.0,
+          "sharpe_like": 0.28573461605208156,
+          "sortino_like": 0.0,
+          "long_wr": 0.0,
+          "short_wr": 100.0,
+          "total_r": 16.865126284888614
+        },
+        {
+          "fold": 2,
+          "trades": 1,
+          "win_rate": 100.0,
+          "profit_factor": 999.0,
+          "expectancy_r": 5.2637236057108385,
+          "avg_r": 5.2637236057108385,
+          "max_dd_r": 0.0,
+          "sharpe_like": 0.0,
+          "sortino_like": 0.0,
+          "long_wr": 100.0,
+          "short_wr": null,
+          "total_r": 5.2637236057108385
+        },
+        {
+          "fold": 3,
+          "trades": 3,
+          "win_rate": 66.66666666666666,
+          "profit_factor": 59.198730109608135,
+          "expectancy_r": 1.7101033326934896,
+          "avg_r": 1.7101033326934896,
+          "max_dd_r": 0.08815157974097243,
+          "sharpe_like": 1.0000378784921178,
+          "sortino_like": 0.0,
+          "long_wr": 0.0,
+          "short_wr": 100.0,
+          "total_r": 5.1303099980804685
+        }
+      ]
+    },
+    "ETHUSDT": {
+      "signals": 18,
+      "train": {
+        "trades": 11,
+        "win_rate": 81.81818181818183,
+        "profit_factor": 3.7787537516957066,
+        "expectancy_r": 3.1929090347759472,
+        "avg_r": 3.1929090347759472,
+        "max_dd_r": 11.966153642777883,
+        "sharpe_like": 0.7941525734236248,
+        "sortino_like": 1.3261576578177405,
+        "long_wr": 80.0,
+        "short_wr": 83.33333333333334,
+        "total_r": 35.12199938253542
+      },
+      "oos": {
+        "trades": 5,
+        "win_rate": 100.0,
+        "profit_factor": 999.0,
+        "expectancy_r": 1.045010710790957,
+        "avg_r": 1.045010710790957,
+        "max_dd_r": 0.0,
+        "sharpe_like": 1.2522821239897173,
+        "sortino_like": 0.0,
+        "long_wr": 100.0,
+        "short_wr": 100.0,
+        "total_r": 5.225053553954785
+      },
+      "wf": [
+        {
+          "fold": 1,
+          "trades": 1,
+          "win_rate": 100.0,
+          "profit_factor": 999.0,
+          "expectancy_r": 0.2241960388319184,
+          "avg_r": 0.2241960388319184,
+          "max_dd_r": 0.0,
+          "sharpe_like": 0.0,
+          "sortino_like": 0.0,
+          "long_wr": 100.0,
+          "short_wr": null,
+          "total_r": 0.2241960388319184
+        },
+        {
+          "fold": 2,
+          "trades": 5,
+          "win_rate": 80.0,
+          "profit_factor": 0.3774584923157066,
+          "expectancy_r": -1.4898854659913687,
+          "avg_r": -1.4898854659913687,
+          "max_dd_r": 11.966153642777885,
+          "sharpe_like": -0.5565935582075592,
+          "sortino_like": 0.0,
+          "long_wr": 100.0,
+          "short_wr": 66.66666666666666,
+          "total_r": -7.449427329956844
+        },
+        {
+          "fold": 3,
+          "trades": 5,
+          "win_rate": 100.0,
+          "profit_factor": 999.0,
+          "expectancy_r": 1.045010710790957,
+          "avg_r": 1.045010710790957,
+          "max_dd_r": 0.0,
+          "sharpe_like": 1.2522821239897173,
+          "sortino_like": 0.0,
+          "long_wr": 100.0,
+          "short_wr": 100.0,
+          "total_r": 5.225053553954785
+        }
+      ]
+    },
+    "SOLUSDT": {
+      "signals": 20,
+      "train": {
+        "trades": 13,
+        "win_rate": 84.61538461538461,
+        "profit_factor": 2.776267508349826,
+        "expectancy_r": 3.242051897965629,
+        "avg_r": 3.242051897965629,
+        "max_dd_r": 18.1092981278183,
+        "sharpe_like": 1.0709285583737276,
+        "sortino_like": 1.3234627022900038,
+        "long_wr": 100.0,
+        "short_wr": 75.0,
+        "total_r": 42.14667467355318
+      },
+      "oos": {
+        "trades": 3,
+        "win_rate": 33.33333333333333,
+        "profit_factor": 0.4188637152736839,
+        "expectancy_r": -2.5584179279047343,
+        "avg_r": -2.5584179279047343,
+        "max_dd_r": 1.3792777467737327,
+        "sharpe_like": -0.5070196767316507,
+        "sortino_like": -0.5997663677330268,
+        "long_wr": 0.0,
+        "short_wr": 50.0,
+        "total_r": -7.6752537837142025
+      },
+      "wf": [
+        {
+          "fold": 1,
+          "trades": 4,
+          "win_rate": 100.0,
+          "profit_factor": 999.0,
+          "expectancy_r": 3.1855290548182738,
+          "avg_r": 3.1855290548182738,
+          "max_dd_r": 0.0,
+          "sharpe_like": 1.0879005298194206,
+          "sortino_like": 0.0,
+          "long_wr": 100.0,
+          "short_wr": 100.0,
+          "total_r": 12.742116219273095
+        },
+        {
+          "fold": 2,
+          "trades": 3,
+          "win_rate": 100.0,
+          "profit_factor": 999.0,
+          "expectancy_r": 0.5696288465910591,
+          "avg_r": 0.5696288465910591,
+          "max_dd_r": 0.0,
+          "sharpe_like": 24.42808761613819,
+          "sortino_like": 0.0,
+          "long_wr": 100.0,
+          "short_wr": 100.0,
+          "total_r": 1.7088865397731772
+        },
+        {
+          "fold": 3,
+          "trades": 3,
+          "win_rate": 33.33333333333333,
+          "profit_factor": 0.4188637152736839,
+          "expectancy_r": -2.5584179279047343,
+          "avg_r": -2.5584179279047343,
+          "max_dd_r": 1.3792777467737327,
+          "sharpe_like": -0.5070196767316507,
+          "sortino_like": -0.5997663677330268,
+          "long_wr": 0.0,
+          "short_wr": 50.0,
+          "total_r": -7.6752537837142025
+        }
+      ]
+    },
+    "XRPUSDT": {
+      "signals": 19,
+      "train": {
+        "trades": 11,
+        "win_rate": 63.63636363636363,
+        "profit_factor": 1.1956528024276405,
+        "expectancy_r": 0.42542043371242216,
+        "avg_r": 0.42542043371242216,
+        "max_dd_r": 23.918005327663735,
+        "sharpe_like": 0.15180190723802586,
+        "sortino_like": 0.39121955399050945,
+        "long_wr": 57.14285714285714,
+        "short_wr": 75.0,
+        "total_r": 4.679624770836644
+      },
+      "oos": {
+        "trades": 6,
+        "win_rate": 66.66666666666666,
+        "profit_factor": 0.28615213087628955,
+        "expectancy_r": -2.5690201777519843,
+        "avg_r": -2.5690201777519843,
+        "max_dd_r": 16.212599588839332,
+        "sharpe_like": -0.9154516855424333,
+        "sortino_like": -1.6475146440146566,
+        "long_wr": 33.33333333333333,
+        "short_wr": 100.0,
+        "total_r": -15.414121066511905
+      },
+      "wf": [
+        {
+          "fold": 1,
+          "trades": 4,
+          "win_rate": 100.0,
+          "profit_factor": 999.0,
+          "expectancy_r": 6.878888009906624,
+          "avg_r": 6.878888009906624,
+          "max_dd_r": 0.0,
+          "sharpe_like": 1.071981948387464,
+          "sortino_like": 0.0,
+          "long_wr": 100.0,
+          "short_wr": 100.0,
+          "total_r": 27.515552039626495
+        },
+        {
+          "fold": 2,
+          "trades": 1,
+          "win_rate": 100.0,
+          "profit_factor": 999.0,
+          "expectancy_r": 0.4479771348008449,
+          "avg_r": 0.4479771348008449,
+          "max_dd_r": 0.0,
+          "sharpe_like": 0.0,
+          "sortino_like": 0.0,
+          "long_wr": null,
+          "short_wr": 100.0,
+          "total_r": 0.4479771348008449
+        },
+        {
+          "fold": 3,
+          "trades": 6,
+          "win_rate": 66.66666666666666,
+          "profit_factor": 0.28615213087628955,
+          "expectancy_r": -2.5690201777519843,
+          "avg_r": -2.5690201777519843,
+          "max_dd_r": 16.212599588839332,
+          "sharpe_like": -0.9154516855424333,
+          "sortino_like": -1.6475146440146566,
+          "long_wr": 33.33333333333333,
+          "short_wr": 100.0,
+          "total_r": -15.414121066511905
+        }
+      ]
+    }
+  }
+}
