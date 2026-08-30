@@ -39,11 +39,11 @@ def load_klines():
             m = CHUNK_RE.match(fn)
             if m:
                 sym = m.group("sym").upper().replace("_", "")
-            elif "15m" in fn and (fn.endswith(".zip") or fn.endswith(".csv")):
+            elif "15m" in fn and fn.endswith((".zip", ".csv", ".txt")):
                 sym = fn.split("-")[0].upper().replace("_", "")
             elif d == "/home/user/uploads" and fn.lower().endswith(".csv"):
                 print(f"IGNORED {fn}: please name it SYMBOL-15m-YYYY-MM.csv "
-                      f"(e.g. BTCUSDT-15m-2026-05.csv)")
+                      f"(or .txt if the chat rejects .csv)")
                 continue
             else:
                 continue
