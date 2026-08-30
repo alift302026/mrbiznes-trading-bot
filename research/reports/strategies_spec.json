@@ -1,0 +1,96 @@
+{
+  "S1_TREND_PB": {
+    "strategy_id": "S1_TREND_PB",
+    "timeframe": "15m",
+    "params_default": null,
+    "regime": "بازار رونددار (ADX ≥ آستانه، راستای 4H مشخص)",
+    "rules_fa": "LONG: بسته‌شدن بالای EMA200 و EMA20>EMA50 + برخورد به ناحیه EMA20 و ماندن بالای EMA50 + تریگر UT Bot خرید + RSI میانۀ مجاز + حجم نسبی کافی. SHORT: قرینه. ورود: بازِ کندل بعد. SL: ATR×ضریب. TP1/TP2 طبق R.",
+    "approval": "HUMAN_MANDATORY",
+    "execution": "SIGNAL_ONLY",
+    "risk_model": {
+      "fee_side": 0.001,
+      "slip_side": 0.0003,
+      "exit_plan": "50% TP1, 50% TP2, SL->BE after TP1"
+    }
+  },
+  "S2_FVG_CONT": {
+    "strategy_id": "S2_FVG_CONT",
+    "timeframe": "15m",
+    "params_default": {
+      "atr_mul": 1.25,
+      "rr1": 1.0,
+      "rr2": 2.0,
+      "relvol": 1.2,
+      "adx_min": 22
+    },
+    "regime": "روند تعریف‌شده 4H با تأیید 1H",
+    "rules_fa": "ساختار 4H (HH/HL یا LH/LL هم‌جهت) + تأیید 1H (بسته شدن سمت درست EMA20) + FVG پرنشده‌ی هم‌جهت با حجم انبساطی هنگام شکل‌گیری؛ ورود LIMIT از میانه‌ی گپ در حداکثر ۱۲ کندل؛ SL پشت لبه‌ی دور FVG؛ TP1/TP2 با R/R بالاتر.",
+    "approval": "HUMAN_MANDATORY",
+    "execution": "SIGNAL_ONLY",
+    "risk_model": {
+      "fee_side": 0.001,
+      "slip_side": 0.0003,
+      "exit_plan": "50% TP1, 50% TP2, SL->BE after TP1"
+    }
+  },
+  "S3_RANGE_REV": {
+    "strategy_id": "S3_RANGE_REV",
+    "timeframe": "15m",
+    "params_default": {
+      "atr_mul": 1.25,
+      "rr1": 1.0,
+      "rr2": 2.0,
+      "relvol": 1.2,
+      "adx_min": 22
+    },
+    "regime": "بازار رنج باریک با کاهش حجم (ADX<25)",
+    "rules_fa": "بازه‌ی ۶۰ کندلی با حداقل ۳ برخورد دو سمت و عرض محدود + کاهش حجم نیمه‌ی دوم؛ خرید از کف با کندل پذیرش (بسته شدن در نیمه‌ی بالای خودش) + StochRSI<25؛ فروش از سقف قرینه؛ SL پشت مرز؛ TP1 میانه، TP2 لبه‌ی مقابل؛ حداقل R/R لازم.",
+    "approval": "HUMAN_MANDATORY",
+    "execution": "SIGNAL_ONLY",
+    "risk_model": {
+      "fee_side": 0.001,
+      "slip_side": 0.0003,
+      "exit_plan": "50% TP1, 50% TP2, SL->BE after TP1"
+    }
+  },
+  "S4_BRK_RETEST": {
+    "strategy_id": "S4_BRK_RETEST",
+    "timeframe": "15m",
+    "params_default": {
+      "atr_mul": 1.25,
+      "rr1": 1.0,
+      "rr2": 2.0,
+      "relvol": 1.2,
+      "adx_min": 22
+    },
+    "regime": "خروج از تثبیت/تراکم (هر رژیمی، ADX ملایم)",
+    "rules_fa": "بسته شدن قوی (بدنه ≥۶۰٪، حجم انبساطی) بیرون از سقف/کف ۴۰ کندل؛ ورود فقط پس از ریتست موفق سطح در ≤۸ کندل؛ SL پشت اکستریم ریتست؛ TP1=1.5R و TP2=3R.",
+    "approval": "HUMAN_MANDATORY",
+    "execution": "SIGNAL_ONLY",
+    "risk_model": {
+      "fee_side": 0.001,
+      "slip_side": 0.0003,
+      "exit_plan": "50% TP1, 50% TP2, SL->BE after TP1"
+    }
+  },
+  "S5_MOM_FLIP": {
+    "strategy_id": "S5_MOM_FLIP",
+    "timeframe": "15m",
+    "params_default": {
+      "atr_mul": 1.25,
+      "rr1": 1.0,
+      "rr2": 3.0,
+      "relvol": 1.2,
+      "adx_min": 22
+    },
+    "regime": "آغاز موج جدید هم‌جهت Supertrend 4H",
+    "rules_fa": "Supertrend(10,3) روی 4H جهت می‌دهد؛ روی 15m کراس هیستوگرام MACD از صفر + RSI سمت درست + بالا/پایین EMA200 + ADX≥20؛ ورود بازِ کندل بعد؛ SL=ATR×ضریب.",
+    "approval": "HUMAN_MANDATORY",
+    "execution": "SIGNAL_ONLY",
+    "risk_model": {
+      "fee_side": 0.001,
+      "slip_side": 0.0003,
+      "exit_plan": "50% TP1, 50% TP2, SL->BE after TP1"
+    }
+  }
+}
