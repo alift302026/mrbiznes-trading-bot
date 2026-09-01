@@ -25,6 +25,9 @@ from app.services.signal_card_renderer import (
 
 from app.services import final_signal_service as _fsvc
 from app.core.config import ADMIN_IDS as _ADMIN_IDS
+from app.services.alert_service import (
+    get_user_plan as _get_user_plan,
+)
 
 
 def _money(
@@ -687,6 +690,84 @@ async def _send_top_setup(
     )
 
 
+# ============================================================
+# FINAL S4 SIGNALS — VIP GATE
+# ============================================================
+
+def _is_final_signals_action(
+    action: str,
+) -> bool:
+    """True for every callback that reads the final S4 signals page
+    (home / list / individual cards). The admin-only send action
+    (`signal_final_send_*`) is excluded — it checks admins itself."""
+
+    if action in (
+        "signal_final_home",
+        "signal_final_list",
+    ):
+        return True
+
+    return (
+        action.startswith("signal_final_")
+        and not action.startswith(
+            "signal_final_send_"
+        )
+    )
+
+
+async def _final_signals_allowed(
+    user_id,
+) -> bool:
+    """Admins always pass; everyone else needs the VIP plan."""
+
+    if user_id in _ADMIN_IDS:
+        return True
+
+    plan = await asyncio.to_thread(
+        _get_user_plan,
+        user_id,
+    )
+
+    return plan == "vip"
+
+
+def _final_vip_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "💎 فعال‌سازی VIP",
+                    callback_data=(
+                        "alert_vip"
+                    ),
+                    style="primary",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "🔙 بازگشت به ترمینال",
+                    callback_data=("signal_home"),
+                ),
+            ],
+        ]
+    )
+
+
+async def _show_final_vip_gate(query) -> None:
+    await query.edit_message_text(
+        "💎 سیگنال‌های نهایی S4 ویژهٔ اعضای VIP است\n"
+        "━━━━━━━━━━━━━━━━\n\n"
+        "⚡ موتور نهایی S4 (Breakout & Retest)\n"
+        "هر ساعت بازار را اسکن می‌کند و ستاپ‌های\n"
+        "کلاس A را با کارت گرافیکی کامل منتشر می‌کند:\n\n"
+        "📍 ورود · حد ضرر · ۳ تارگت · اهرم پیشنهادی\n"
+        "🏅 امتیاز ۰ تا ۱۰۰ + دلیل فارسی هر سیگنال\n\n"
+        "💎 برای دسترسی به سیگنال‌های نهایی،\n"
+        "اشتراک VIP فعال کن.",
+        reply_markup=_final_vip_keyboard(),
+    )
+
+
 def _final_home_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
@@ -915,6 +996,22 @@ async def signal_callback(
         query.data
         or ""
     )
+
+    # --------------------------------------------------------
+    # FINAL S4 SIGNALS — VIP GATE
+    # --------------------------------------------------------
+
+    if _is_final_signals_action(action):
+
+        allowed = await _final_signals_allowed(
+            query.from_user.id
+            if query.from_user
+            else 0,
+        )
+
+        if not allowed:
+            await _show_final_vip_gate(query)
+            return
 
     if action == "signal_final_home":
         try:
