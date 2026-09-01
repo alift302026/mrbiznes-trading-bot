@@ -2,6 +2,10 @@ from app.bot.psychology_handlers import (
     psychology_home,
 )
 
+from app.bot.plt_handlers import (
+    plt_entry,
+)
+
 from app.i18n.translations import (
     t,
 )
@@ -62,6 +66,22 @@ async def route_module(
     ):
 
         await psychology_home(
+            update,
+            context,
+        )
+
+        return True
+
+    # ========================================================
+    # PLT - vision chart analysis
+    # ========================================================
+
+    if text == t(
+        language,
+        "plt",
+    ):
+
+        await plt_entry(
             update,
             context,
         )
