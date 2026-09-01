@@ -1,26 +1,10 @@
-"""MrBiznes FINAL setup engine (S4 breakout-retest, research-validated).
-
-Pipeline (per project rules):
-MARKET DATA -> INDICATORS -> SETUP DETECTION -> CONFIRMATION
--> RISK ENGINE -> SIGNAL (dict) -> HUMAN APPROVAL (never auto-orders).
-
-Research provenance: S4 breakout-retest was the strongest family in the
-May-Jul 2026 xt 15m study (4 majors, fees+slippage, chrono walk-forward):
-~65% OOS entry win-rate with rr1/rr2 = 1R/2R exits. Regime gating and
-trailing exits were tested in v2/v3 and NOT adopted (no OOS improvement).
-The engine ships in paper-tracking mode; forward validation comes first.
-
-Pure pandas/numpy. Data inputs are DataFrames so the engine is fully
-testable offline (research zips) and identical logic runs live on XT.
-"""
+"""MrBiznes FINAL setup engine (S4 breakout-retest, research-validated)."""
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-
-# ----------------------------- indicators ---------------------------------
 
 
 def _ema(s: pd.Series, n: int) -> pd.Series:
@@ -64,7 +48,6 @@ def _rsi(s: pd.Series, n: int = 9) -> pd.Series:
 
 
 def _ut_bot(df: pd.DataFrame, key: float = 1.0, atr_n: int = 10) -> pd.Series:
-    """UT Bot trailing-stop position (+1 long / -1 short), user's Pine spec."""
     src = df["close"]
     atr_ = _atr(df, atr_n) * key
     trail = np.zeros(len(df))
@@ -99,8 +82,6 @@ def _ut_bot(df: pd.DataFrame, key: float = 1.0, atr_n: int = 10) -> pd.Series:
     return pd.Series(pos, index=df.index)
 
 
-# ----------------------------- engine -------------------------------------
-
 LEVEL_BARS = 40
 RETEST_BARS = 8
 BODY_MIN = 0.6
@@ -108,7 +89,7 @@ RELVOL_MIN = 1.2
 ADX15_MIN = 16.0
 ADXTREND_MIN = 18.0
 RR1, RR2, RR3 = 1.0, 2.0, 3.0
-FRESH_WITHIN = 6  # only emit signal if trigger inside last N bars
+FRESH_WITHIN = 6
 
 
 def _prepare(df: pd.DataFrame) -> pd.DataFrame:
@@ -130,7 +111,6 @@ def analyze_candles(
     df1h: pd.DataFrame,
     df4h: pd.DataFrame,
 ) -> Optional[Dict[str, Any]]:
-    """Detect the latest S4 LONG/SHORT signal. None if nothing fresh."""
     if len(df15) < LEVEL_BARS + RETEST_BARS + 15 or len(df4h) < 55:
         return None
     d15 = _prepare(df15)
@@ -194,7 +174,7 @@ def analyze_candles(
     if best is None:
         return None
     if best["decision_i"] < n - 1 - FRESH_WITHIN:
-        return None  # stale: never emit
+        return None
 
     side = best["side"]
     entry, sl = best["entry"], best["sl"]
@@ -203,7 +183,6 @@ def analyze_candles(
     tp2 = entry + side * RR2 * risk
     tp3 = entry + side * RR3 * risk
 
-    # ---- confluence scoring (0-100, explainable) ----
     t4h_trend = 1 if ema20.iloc[-1] > ema50.iloc[-1] and df4h["close"].iloc[-1] > ema50.iloc[-1] else (
         -1 if ema20.iloc[-1] < ema50.iloc[-1] and df4h["close"].iloc[-1] < ema50.iloc[-1] else 0
     )
@@ -213,7 +192,7 @@ def analyze_candles(
     rsi15 = float(d15["rsi9"].iloc[best["decision_i"]])
     ut15 = int(d15["ut"].iloc[best["decision_i"]])
     ut1h = int(u1h.iloc[-1]) if u1h is not None and len(u1h) else 0
-    body_pct = body = float(
+    body_pct = float(
         abs(c[best["break_i"]] - o[best["break_i"]])
         / max(hi[best["break_i"]] - lo[best["break_i"]], 1e-12)
     )
@@ -227,16 +206,21 @@ def analyze_candles(
     parts["breakout_quality"] = 15 if body_pct >= 0.75 else (10 if body_pct >= 0.65 else 6)
     parts["rsi_context"] = 10 if (side == 1 and rsi15 > 50 or side == -1 and rsi15 < 50) else 4
     score = int(sum(parts.values()))
-    if score < 60:
-        return None  # no forced signals
+    if score < 50:
+        return None
 
-    grade = "A+" if score >= 85 else ("A" if score >= 75 else "A-")
+    grade = (
+        "A+" if score >= 85
+        else "A" if score >= 75
+        else "A-" if score >= 60
+        else "B+"
+    )
     direction = "LONG" if side == 1 else "SHORT"
 
     sl_pct = risk / entry
     lev = int(np.clip(round(0.012 / max(sl_pct, 1e-6)), 2, 10))
     lev_lo = max(2, lev - 2)
-    lev_txt = f"{lev}x" if lev == lev_lo else f"{lev_lo}x–{lev}x"
+    lev_txt = f"{lev}x" if lev == lev_lo else f"{lev_lo}x-{lev}x"
     dd = d15.index[best["decision_i"]]
 
     reasons: List[str] = []
@@ -259,7 +243,7 @@ def analyze_candles(
         "بک‌تست ۳ ماه: ورود حدود ۶۵٪ برد جهت‌دار داشته؛ معامله همیشه تصمیم شماست.",
     ]
     if t4h_trend != side:
-        risks.append("روند ۴ ساعته تأیید کامل نمی‌کند — با حجم کمتر.")
+        risks.append("روند ۴ ساعته تأیید کامل نمی‌کند - با حجم کمتر.")
 
     return {
         "symbol": symbol,
@@ -283,7 +267,7 @@ def analyze_candles(
                 "dow": "UT-LONG" if ut15 == 1 else "UT-SHORT",
                 "volume": {"state": f"{relv:.1f}x avg"},
             },
-            "1h": {"dow": "UP" if ut1h == 1 else ("DOWN" if ut1h == -1 else "—")},
+            "1h": {"dow": "UP" if ut1h == 1 else ("DOWN" if ut1h == -1 else "-")},
             "4h": {"dow": "UP" if t4h_trend == 1 else ("DOWN" if t4h_trend == -1 else "FLAT")},
         },
         "reasons": reasons,
@@ -303,7 +287,6 @@ def resample_df(df: pd.DataFrame, rule: str) -> pd.DataFrame:
 
 
 def analyze_symbol_online(symbol: str) -> Optional[Dict[str, Any]]:
-    """Live path: fetch closed candles from XT and analyze."""
     from app.engines.signals.xt_signal_provider import fetch_candles
 
     def _to_df(candles):
