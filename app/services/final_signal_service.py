@@ -1,5 +1,4 @@
-"""Final signal service: scan, store, caption. Human approval only — the
-bot never places orders; this only renders suggestion cards."""
+"""Final signal service: scan, store, caption. Human approval only."""
 from __future__ import annotations
 
 import json
@@ -27,7 +26,7 @@ def watchlist() -> List[str]:
 
 
 def push_enabled() -> bool:
-    return os.getenv("FINAL_SIGNALS_PUSH", "0") == "1"
+    return os.getenv("FINAL_SIGNALS_PUSH", "1") == "1"
 
 
 def _load_store() -> Dict[str, Any]:
@@ -58,7 +57,6 @@ def save_signals(signals: List[Dict[str, Any]]) -> None:
 
 
 def scan_all(timeout_note: bool = True) -> List[Dict[str, Any]]:
-    """Run the engine over the whole watchlist (sync, network)."""
     from app.engines.signals.final_setup_engine import analyze_symbol_online
 
     out: List[Dict[str, Any]] = []
@@ -68,7 +66,7 @@ def scan_all(timeout_note: bool = True) -> List[Dict[str, Any]]:
             if sig:
                 out.append(sig)
                 logger.info("final-signal: %s %s score=%s", sym, sig["direction"], sig["confidence"])
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("final-signal scan failed for %s: %s", sym, exc)
     return out
 
@@ -86,12 +84,10 @@ def _price(v: Any) -> str:
 
 
 def build_caption_fa(signal: Dict[str, Any]) -> str:
-    """Persian caption with WHY lines + honest risk framing (same style as
-    the bot's signal section cards)."""
     emoji = "🟢" if signal.get("direction") == "LONG" else "🔴"
     pos_risk = signal.get("position_risk", "۱٪")
     lines = [
-        "🎯 سیگنال نهایی مستر بیزنس — S4 Breakout & Retest",
+        "🎯 سیگنال نهایی مستر بیزنس - S4 Breakout & Retest",
         "",
         f"{emoji} {signal.get('direction', '—')}  |  🪙 {signal.get('symbol', '—')}",
         f"🏅 Grade: {signal.get('grade', '—')}  |  امتیاز: {signal.get('confidence', 0)}/100",
@@ -125,7 +121,6 @@ def build_caption_fa(signal: Dict[str, Any]) -> str:
 
 
 def render_card(signal: Dict[str, Any]):
-    """Render the same graphical card used by the bot's signal section."""
     from app.services.signal_card_renderer import render_signal_card
 
     return render_signal_card(signal)
