@@ -1,16 +1,9 @@
-"""Hourly final-signal worker.
-
-Scans the watchlist with the research-validated S4 engine, stores fresh
-signals and (when FINAL_SIGNALS_PUSH=1) pushes graphical cards to the
-admin chat (V1). VIP gating plugs in later via plan_limits.
-Never auto-trades: suggestion cards only.
-"""
+"""Hourly final-signal worker."""
 from __future__ import annotations
 
 import asyncio
 import logging
 
-from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from app.core.config import ADMIN_IDS
@@ -22,7 +15,7 @@ logger = logging.getLogger(__name__)
 async def final_signal_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         signals = await asyncio.to_thread(svc.scan_all)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("final-signal worker scan error: %s", exc)
         return
 
@@ -32,7 +25,7 @@ async def final_signal_job(context: ContextTypes.DEFAULT_TYPE) -> None:
 
     logger.info("final-signal worker: %d fresh signal(s) stored", len(fresh))
     if not svc.push_enabled():
-        logger.info("final-signal worker: push disabled (FINAL_SIGNALS_PUSH=0) — paper mode")
+        logger.info("final-signal worker: push disabled - paper mode")
         return
 
     for sig in fresh:
@@ -46,7 +39,7 @@ async def final_signal_job(context: ContextTypes.DEFAULT_TYPE) -> None:
                         photo=card,
                         caption=caption[:1024],
                     )
-                except Exception as send_exc:  # noqa: BLE001
+                except Exception as send_exc:
                     logger.warning("final-signal push to %s failed: %s", admin_id, send_exc)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("final-signal render/push error: %s", exc)
