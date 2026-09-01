@@ -1,9 +1,4 @@
-"""Admin preview for the final S4 signal engine.
-
-`/signalpreview` — scans the watchlist right now and sends the freshest,
-highest-confidence signal card (graphic + Persian caption) to the admin.
-This is exactly the card that goes into the bot's signal section.
-"""
+"""Admin preview: /signalpreview"""
 from __future__ import annotations
 
 import asyncio
@@ -46,14 +41,14 @@ async def signal_preview_command(
         if update.message:
             await update.message.reply_text(
                 "🔎 الان ستاپ تازه و باکیفیت پیدا نشد.\n"
-                "سیگنال اجباری تولید نمی‌کنیم — صبر، بخشی از استراتژی است. ✅"
+                "سیگنال اجباری تولید نمی‌کنیم - صبر، بخشی از استراتژی است. ✅"
             )
         return
 
     best = max(pool, key=lambda s: (s.get("confidence", 0), str(s.get("decision_time", ""))))
     try:
         card = await asyncio.to_thread(svc.render_card, best)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("final signal card render failed: %s", exc)
         card = None
 
