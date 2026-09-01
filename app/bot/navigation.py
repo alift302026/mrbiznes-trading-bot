@@ -17,15 +17,13 @@ def main_menu(
         ],
         [
             t(language, "alerts"),
-            t(language, "watchlist"),
+            t(language, "plt"),
         ],
         [
             t(language, "sessions"),
-            t(language, "news"),
         ],
         [
             t(language, "psychology"),
-            t(language, "analysis"),
         ],
         [
             t(language, "trader"),
