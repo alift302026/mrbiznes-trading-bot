@@ -36,6 +36,7 @@ TEXTS = {
         "news": "📰 اخبار",
         "psychology": "🧠 روانشناسی ترید",
         "analysis": "🤖 تحلیل من",
+        "plt": "🧠 PLT تحلیل چارت",
         "trader": "🤖 ربات تریدر",
         "exchange": "🔗 اتصال صرافی",
         "vip": "💎 VIP و پرداخت",
@@ -167,6 +168,7 @@ TEXTS = {
         "news": "📰 News",
         "psychology": "🧠 Trading Psychology",
         "analysis": "🤖 My Analysis",
+        "plt": "🧠 PLT Chart AI",
         "trader": "🤖 Trader Bot",
         "exchange": "🔗 Exchange Connection",
         "vip": "💎 VIP & Payment",
@@ -292,6 +294,7 @@ TEXTS = {
         "news": "📰 الأخبار",
         "psychology": "🧠 سيكولوجية التداول",
         "analysis": "🤖 تحليلي",
+        "plt": "🧠 PLT تحليل الشارت",
         "trader": "🤖 روبوت التداول",
         "exchange": "🔗 ربط منصة التداول",
         "vip": "💎 VIP والدفع",
@@ -302,7 +305,7 @@ TEXTS = {
         "support": "🎧 الدعم",
         "about": "🤝 من نحن",
         "account": "👤 حسابي",
-        "language": "🌐 تغيير اللغة",
+        "language": "🌐 تغییر اللغة",
         "admin": "🛡 الإدارة",
 
         "session_center": "🌍 مركز جلسات السوق",
@@ -322,84 +325,4 @@ TEXTS = {
         "closes": "🔕 الإغلاق",
         "time_to_open": "⏳ الوقت حتى الافتتاح",
         "time_to_close": "⏳ الوقت حتى الإغلاق",
-        "progress": "📊 تقدم الجلسة",
-        "active_sessions": "🟢 الجلسات النشطة",
-        "no_active_session": "🔴 لا توجد جلسة نشطة حالياً.",
-        "next_session": "⏭ الجلسة التالية",
-        "starts_in": "⏳ تبدأ خلال",
-        "overlap": "🔥 تداخل الجلسات",
-        "session_alert_on": "🔔 تنبيهات الجلسات مفعلة",
-        "session_alert_off": "🔕 تنبيهات الجلسات متوقفة",
-        "enable_session_alert": "🔔 تفعيل تنبيهات الجلسات",
-        "disable_session_alert": "🔕 إيقاف تنبيهات الجلسات",
-
-        "market_center": "📊 مركز الأسواق",
-        "crypto": "₿ العملات الرقمية",
-        "forex": "💱 الفوركس",
-        "gold": "🥇 الذهب",
-        "oil": "🛢 النفط",
-        "btc_dominance": "₿ هيمنة البيتكوين",
-        "eth_dominance": "Ξ هيمنة الإيثريوم",
-        "stablecoin_dominance": "₮ هيمنة العملات المستقرة",
-        "top_gainers": "🔥 الأكثر ارتفاعاً",
-        "top_losers": "❄️ الأكثر انخفاضاً",
-        "volume_leaders": "💧 الأعلى حجماً",
-        "price": "💵 السعر",
-        "change_24h": "📈 تغير 24 ساعة",
-        "market_cap": "💰 القيمة السوقية",
-        "volume": "📊 حجم التداول",
-        "data_source": "🔗 مصدر البيانات",
-        "data_unavailable": "⚠️ البيانات غير متاحة حالياً.",
-
-        "signal_center": "📡 مركز الإشارات",
-        "free_signals": "🆓 إشارات مجانية",
-        "vip_signals": "💎 إشارات VIP",
-        "spot": "📈 سبوت",
-        "futures": "⚡ عقود آجلة",
-        "signal_history": "📜 سجل الإشارات",
-        "entry": "🎯 الدخول",
-        "stop_loss": "🛑 وقف الخسارة",
-        "take_profit": "✅ جني الأرباح",
-        "score": "⭐ التقييم",
-        "long": "🟢 شراء",
-        "short": "🔴 بيع",
-        "wait": "⏳ انتظار",
-        "watch": "👁 مراقبة",
-
-        "price_alert": "💰 تنبيه السعر",
-        "ema_cross": "📈 تقاطع EMA",
-        "rsi_alert": "📊 تنبيه RSI",
-        "macd_alert": "〽️ تنبيه MACD",
-        "volume_alert": "📊 تنبيه الحجم",
-
-        "referral": "🎁 الإحالة",
-        "my_points": "⭐ نقاطي",
-        "discount": "🎟 كود الخصم",
-        "payment": "💳 الدفع",
-        "transactions": "🧾 معاملاتي",
-        "subscription": "💎 اشتراكي",
-
-        "forex_news": "💱 أخبار الفوركس",
-        "crypto_news": "₿ أخبار الكريبتو",
-        "listings": "🪙 إدراجات جديدة",
-        "cooperation": "🤝 تعاون معنا",
-
-        "informational_notice": (
-            "⚠️ المعلومات والتحليلات لأغراض تعليمية وإعلامية "
-            "ولا تضمن نتائج التداول."
-        ),
-    },
-}
-
-
-def t(language, key):
-    if language not in TEXTS:
-        language = "en"
-
-    return TEXTS[language].get(
-        key,
-        TEXTS["en"].get(
-            key,
-            key,
-        ),
-    )
+        "progress": "📊 تقدم 
