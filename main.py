@@ -104,10 +104,6 @@ from app.bot.session_handlers import (
     sessions_page,
 )
 
-from app.bot.welcome_handlers import (
-    send_welcome,
-)
-
 from app.bot.journal_handlers import (
     journal_callback,
     journal_home,
@@ -461,11 +457,6 @@ async def start(
     ):
 
         return
-
-    # Welcome
-    await send_welcome(
-        update
-    )
 
     # Always default to Persian
     language = "fa"

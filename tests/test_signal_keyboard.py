@@ -42,9 +42,3 @@ def test_core_buttons_still_present():
         "signal_home",
     ):
         assert expected in callbacks, f"missing button: {expected}"
-
-
-def test_welcome_caption_has_no_final_s4_ads():
-    from app.bot.welcome_handlers import WELCOME_TEXT
-
-    assert "S4" not in WELCOME_TEXT
