@@ -1058,6 +1058,25 @@ async def payment_callback(
 # TEXT INPUT
 # ============================================================
 
+MENU_BUTTON_TEXTS = {
+    "📊 بازارها",
+    "📡 سیگنال‌ها",
+    "🔔 آلارم‌ها",
+    "🧠 PLT تحلیل چارت",
+    "🌍 سشن‌های بازار",
+    "📓 ژورنال معاملاتی",
+    "🧠 روانشناسی ترید",
+    "💎 VIP و پرداخت",
+    "🎁 رفرال و امتیاز",
+    "📈 عملکرد ماهانه",
+    "🏦 صرافی‌های ما",
+    "🎧 پشتیبانی",
+    "🤝 درباره ما",
+    "👤 حساب من",
+    "🛡 مدیریت",
+}
+
+
 async def payment_message(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -1068,6 +1087,18 @@ async def payment_message(
         or update.effective_user
         is None
     ):
+        return False
+
+    text = (
+        update.message.text
+        or ""
+    ).strip()
+
+    if text in MENU_BUTTON_TEXTS or text.startswith("/") or text in {"انصراف", "لغو", "بازگشت"}:
+        clear_payment_input(context)
+        if text in {"انصراف", "لغو", "بازگشت"}:
+            await update.message.reply_text("فرآیند پرداخت لغو شد.")
+            return True
         return False
 
     pending = (
@@ -1082,11 +1113,6 @@ async def payment_message(
     user_id = (
         update.effective_user.id
     )
-
-    text = (
-        update.message.text
-        or ""
-    ).strip()
 
     flow = get_payment_flow(
         context

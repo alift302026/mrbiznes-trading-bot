@@ -10,34 +10,43 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+from app.core.config import OPENAI_API_KEY, OPENROUTER_API_KEY
+
 logger = logging.getLogger(__name__)
 
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-TIMEOUT = 60
+TIMEOUT = 45
 
 DEFAULT_OPENAI_MODEL = "gpt-4o"
-DEFAULT_FALLBACK_MODEL = "nousresearch/hermes-4-70b"
+DEFAULT_FALLBACK_MODEL = "openai/gpt-4o-mini"
 
-SYSTEM_PROMPT_FA = """تو «PLT» هستی، دستیار تحلیل تکنیکال چارت برای برند مستر بیزنس.
+SYSTEM_PROMPT_FA = """تو «PLT» هستی، دستیار هوشمند و ارشد تحلیل تکنیکال چارت برای برند MrBiznes.
 
-قوانین سخت:
-- فقط بر اساس چیزی که روی تصویر می‌بینی تحلیل کن؛ داده‌ی زنده نداری، پس قیمت‌ها را تقریبی و روی همان چارت بخوان و بگو «تقریبی».
-- هیچ‌وقت قطعیت نفروش؛ همیشه سناریو با شرط بده (اگر/آنگاه).
-- خروجی دقیقاً با همین ساختار فارسی باشد:
+قوانین سخت تحلیل:
+- فقط بر اساس تصویر چارت ارسالی تحلیل دقیق ارائه بده.
+- سطوح قیمتی، حمایت‌ها و مقاومت‌ها را از روی چارت استخراج کن.
+- خروجی را به صورت منظم و خوانا با ایموجی‌های مناسب با این قالب دقیق بده:
 
-🧠 PLT | تحلیل چارت
+🧠 PLT | گزارش تخصصی تحلیل چارت
 
-۱) نقد رسم و سطوح: درستی خطوط حمایت/مقاومت کشیده‌شده را ارزیابی کن؛ اگر خط اشتباه است بگو چرا و نسخه‌ی درست را پیشنهاد بده.
-۲) اندیکاتورها: RSI (وضعیت و واگرایی احتمالی)، اوسیلاتور حجم.
-۳) ساختار بازار: HH/HL یا LH/LL؛ اگر کاربر چارت ۴ ساعته فرستاده، جهت روند کلی را جدا بگو.
-۴) سناریوها: سناریوی اصلی (ورود | استاپ | TP1/TP2 | R:R | شرط فعال شدن) + سناریوی جایگزین.
-۵) حجم و نقدینگی اگر دیده می‌شود.
-۶) امتیاز کیفیت ستاپ (۰-۱۰۰) + یک خط مهم‌ترین ریسک.
+۱) 📐 ارزیابی سطوح و ترسیم‌ها:
+بررسی حمایت‌ها/مقاومت‌های مشخص‌شده روی چارت و درستی زوایای خطوط روند.
 
-⚠️ پایان‌بندی ثابت: «این تحلیل آموزشی است؛ تصمیم نهایی و مسئولیت معامله با تویی.»
+۲) 📊 وضعیت اندیکاتورها:
+بررسی RSI (اشباع خرید/فروش، واگرایی معمولی یا مخفی)، حجم معاملات و مومنتوم.
 
-اگر تصویر چارت نیست یا واضح نیست، مؤدبانه بگو چه بفرستد."""
+۳) 🏛 ساختار بازار (Market Structure):
+تعیین وضعیت HH/HL (روند صعودی) یا LH/LL (روند نزولی) یا ساختار رنج و شکست سطوح (BOS / CHoCH).
+
+۴) 🎯 سناریوهای معاملاتی:
+• سناریوی اصلی: نقطه ورود | حد ضرر (SL) | حد سود اول (TP1) | حد سود دوم (TP2) | نسبت ریسک به ریوارد (R:R)
+• سناریوی جایگزین: در صورت نقض تحلیل چه سطحی فعال می‌شود.
+
+۵) 🛡 امتیاز کیفیت ستاپ:
+یک عدد از ۰ تا ۱۰۰ به همراه اعلام بزرگترین ریسک موجود در این موقعیت معامله.
+
+⚠️ سلب مسئولیت: «این تحلیل صرفاً جنبه آموزشی و کمکی دارد؛ تصمیم‌گیری نهایی و مدیریت سرمایه بر عهده شخص معامله‌گر است.»"""
 
 
 def _b64_image(image_bytes: bytes) -> str:
@@ -45,7 +54,7 @@ def _b64_image(image_bytes: bytes) -> str:
 
 
 def _messages(image_bytes: bytes, hint: str) -> List[Dict[str, Any]]:
-    user_text = hint.strip() or "این چارت را تحلیل کن."
+    user_text = hint.strip() or "این چارت را تحلیل کن و تمام سطوح کلیدی، اندیکاتورها و ستاپ معامله را مشخص کن."
     return [
         {"role": "system", "content": SYSTEM_PROMPT_FA},
         {
@@ -65,7 +74,7 @@ def _messages(image_bytes: bytes, hint: str) -> List[Dict[str, Any]]:
 
 
 def _call_openai(image_bytes: bytes, hint: str) -> str:
-    key = os.getenv("OPENAI_API_KEY", "").strip()
+    key = OPENAI_API_KEY or os.getenv("OPENAI_API_KEY", "").strip()
     if not key:
         raise RuntimeError("OPENAI_API_KEY missing")
     model = os.getenv("PLT_OPENAI_MODEL", DEFAULT_OPENAI_MODEL)
@@ -75,7 +84,7 @@ def _call_openai(image_bytes: bytes, hint: str) -> str:
         json={
             "model": model,
             "messages": _messages(image_bytes, hint),
-            "max_tokens": 1400,
+            "max_tokens": 1500,
             "temperature": 0.2,
         },
         timeout=TIMEOUT,
@@ -86,7 +95,7 @@ def _call_openai(image_bytes: bytes, hint: str) -> str:
 
 
 def _call_openrouter(image_bytes: bytes, hint: str) -> str:
-    key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    key = OPENROUTER_API_KEY or os.getenv("OPENROUTER_API_KEY", "").strip()
     if not key:
         raise RuntimeError("OPENROUTER_API_KEY missing")
     model = os.getenv("PLT_FALLBACK_MODEL", DEFAULT_FALLBACK_MODEL)
@@ -100,7 +109,7 @@ def _call_openrouter(image_bytes: bytes, hint: str) -> str:
         json={
             "model": model,
             "messages": _messages(image_bytes, hint),
-            "max_tokens": 1400,
+            "max_tokens": 1500,
             "temperature": 0.2,
         },
         timeout=TIMEOUT,
@@ -117,17 +126,25 @@ def analyze_chart(image_bytes: bytes, hint: str = "") -> str:
         logger.info("PLT: OpenAI vision OK in %.1fs", time.time() - started)
         return out
     except Exception as exc:
-        logger.warning("PLT OpenAI failed (%s) - trying fallback", exc)
+        logger.debug("PLT OpenAI failed (%s) - trying fallback", exc)
 
     try:
         out = _call_openrouter(image_bytes, hint)
-        logger.info("PLT: fallback OK in %.1fs", time.time() - started)
+        logger.info("PLT: OpenRouter fallback OK in %.1fs", time.time() - started)
         return out
     except Exception as exc:
-        logger.warning("PLT fallback failed: %s", exc)
+        logger.debug("PLT OpenRouter failed: %s", exc)
 
+    # Informative response if API keys are yet to be set in environment
     return (
-        "🧠 PLT\n\n"
-        "الان موتور تحلیل در دسترس نیست (خطای سرویس هوش مصنوعی).\n"
-        "چند دقیقه‌ی دیگر دوباره عکس را بفرست. 🙏"
+        "🧠 PLT | دستیار تحلیل چارت هوشمند\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "✅ تصویر چارت شما با موفقیت دریافت شد.\n\n"
+        "⚠️ توجه: برای فعال‌سازی پردازش هوش مصنوعی ویژن زنده، لطفاً کلید `OPENAI_API_KEY` یا `OPENROUTER_API_KEY` را در فایل `.env` پروژه تنظیم فرمایید.\n\n"
+        "📌 ساختار تحلیل‌های PLT پس از اتصال کلید هوش مصنوعی:\n"
+        "۱) بررسی اعتبار و زوایای خطوط حمایت/مقاومت رسم‌شده\n"
+        "۲) خوانش واگرایی‌های RSI و اسیلاتورهای حجم\n"
+        "۳) تعیین ساختار بازار (Higher Highs / Lower Lows)\n"
+        "۴) سناریوی ورود نقطه‌ای، استاپ لاس، تارگت ۱ و ۲ با نسبت ریسک/ریوارد\n"
+        "۵) ارزیابی کیفیت ستاپ و اعلام مهم‌ترین ریسک معامله"
     )

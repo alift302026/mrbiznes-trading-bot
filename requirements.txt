@@ -27,7 +27,7 @@ jdatetime==6.1.0
 Mako==1.4.1
 MarkupSafe==3.0.3
 multidict==6.7.1
-numpy==2.5.2
+numpy>=1.26.0
 orjson==3.11.9
 pandas==3.0.5
 pillow==12.3.0

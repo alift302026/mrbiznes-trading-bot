@@ -6,10 +6,9 @@ from app.i18n.translations import t
 
 
 def main_menu(
-    language: str,
+    language: str = "fa",
     admin: bool = False,
 ):
-
     rows = [
         [
             t(language, "markets"),
@@ -21,21 +20,15 @@ def main_menu(
         ],
         [
             t(language, "sessions"),
+            t(language, "journal"),
         ],
         [
             t(language, "psychology"),
-        ],
-        [
-            t(language, "trader"),
-            t(language, "exchange"),
-        ],
-        [
             t(language, "vip"),
-            t(language, "rewards"),
         ],
         [
+            t(language, "rewards"),
             t(language, "performance"),
-            t(language, "education"),
         ],
         [
             t(language, "our_exchanges"),
@@ -44,9 +37,6 @@ def main_menu(
         [
             t(language, "about"),
             t(language, "account"),
-        ],
-        [
-            t(language, "language"),
         ],
     ]
 

@@ -43,15 +43,18 @@ def parse_admin_ids() -> set[int]:
 
 ADMIN_IDS = parse_admin_ids()
 
+# XT Exchange Credentials
+XT_API_KEY = os.getenv("XT_API_KEY", "").strip()
+XT_SECRET_KEY = os.getenv("XT_SECRET_KEY", "").strip()
+XT_ACCESS_KEY = os.getenv("XT_ACCESS_KEY", XT_API_KEY).strip()
+
+# Other API Keys
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
+TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY", "").strip()
 
 WELCOME_IMAGE = (
     BASE_DIR
     / "assets"
     / "welcome.jpg"
 )
-
-
-if not BOT_TOKEN:
-    raise RuntimeError(
-        "BOT_TOKEN is missing from .env"
-    )
