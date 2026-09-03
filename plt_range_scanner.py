@@ -38,39 +38,105 @@ DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 SNAPSHOT_PATH = DATA_DIR / "plt_range_scanner_latest.json"
-ENV_PATH = BASE_DIR / ".env"
+
+# Dedicated (separate) env file for THIS cron job — independent from
+# the bot's shared .env. Override the location with PLT_SCANNER_ENV.
+DEDICATED_ENV_PATH = BASE_DIR / ".env.plt_range_scanner"
+SHARED_ENV_PATH = BASE_DIR / ".env"
 
 TEHRAN = ZoneInfo("Asia/Tehran")
 
 # ------------------------------------------------------------
-# CONFIG (.env aware, stdlib-only dotenv)
+# CONFIG (dedicated .env.plt_range_scanner first, shared .env fallback)
 # ------------------------------------------------------------
 
-def _load_env() -> None:
-    """Minimal .env loader (KEY=VALUE, no override of real env)."""
-    if not ENV_PATH.exists():
-        return
+def _parse_env_file(path: Path) -> dict:
+    """Parse KEY=VALUE lines. Missing files yield {}."""
+    result: dict = {}
     try:
-        for line in ENV_PATH.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, _, value = line.partition("=")
-            key = key.strip()
-            value = value.strip().strip('"').strip("'")
-            if key and key not in os.environ:
-                os.environ[key] = value
+        lines = path.read_text(encoding="utf-8").splitlines()
     except OSError:
-        pass
+        return result
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key:
+            result[key] = value
+    return result
 
 
-_load_env()
+def _load_env(paths: list[Path]) -> None:
+    """Load env files in order; real environment always wins."""
+    for path in paths:
+        for key, value in _parse_env_file(path).items():
+            if key not in os.environ:
+                os.environ[key] = value
+
+
+_load_env([DEDICATED_ENV_PATH, SHARED_ENV_PATH])
+
+
+def _lcw_key_candidates(dedicated_path: Path | None, shared_path: Path | None):
+    """Yield (source, key) in strict precedence order."""
+    yield "dedicated-env", os.getenv(
+        "PLT_SCANNER_LIVECOINWATCH_API_KEY", ""
+    ).strip()
+
+    dedicated_file = _parse_env_file(
+        dedicated_path if dedicated_path is not None else DEDICATED_ENV_PATH
+    )
+    yield "dedicated-file", (
+        dedicated_file.get("PLT_SCANNER_LIVECOINWATCH_API_KEY")
+        or dedicated_file.get("LIVECOINWATCH_API_KEY")
+        or ""
+    ).strip()
+
+    yield "shared-env", os.getenv("LIVECOINWATCH_API_KEY", "").strip()
+
+    shared_file = _parse_env_file(
+        shared_path if shared_path is not None else SHARED_ENV_PATH
+    )
+    yield "shared-file", shared_file.get("LIVECOINWATCH_API_KEY", "").strip()
+
+
+def resolve_lcw_key(
+    dedicated_path: Path | None = None,
+    shared_path: Path | None = None,
+) -> str:
+    """LiveCoinWatch key — DEDICATED scanner key first.
+
+    Precedence (first non-empty wins):
+      1. env var  PLT_SCANNER_LIVECOINWATCH_API_KEY
+      2. dedicated file .env.plt_range_scanner  (PLT_SCANNER_LIVECOINWATCH_API_KEY,
+         or LIVECOINWATCH_API_KEY inside that dedicated file)
+      3. shared  env var / .env  LIVECOINWATCH_API_KEY  (legacy fallback)
+    """
+    for _, value in _lcw_key_candidates(dedicated_path, shared_path):
+        if value:
+            return value
+    return ""
+
+
+def lcw_key_source(
+    dedicated_path: Path | None = None,
+    shared_path: Path | None = None,
+) -> str:
+    """Where the effective key comes from: dedicated-env | dedicated-file | shared-env | shared-file | none."""
+    for source, value in _lcw_key_candidates(dedicated_path, shared_path):
+        if value:
+            return source
+    return "none"
+
 
 # Market data provider (read-only, public, no credentials needed)
 BITUNIX_SPOT_BASE = os.getenv("BITUNIX_SPOT_BASE", "https://openapi.bitunix.com")
 BITUNIX_FUTURES_BASE = os.getenv("BITUNIX_FUTURES_BASE", "https://fapi.bitunix.com")
 LCW_BASE = os.getenv("LCW_BASE", "https://api.livecoinwatch.com")
-LCW_API_KEY = os.getenv("LIVECOINWATCH_API_KEY", "").strip()
+LCW_API_KEY = resolve_lcw_key()
 
 MARKET = os.getenv("PLT_RANGE_MARKET", "spot").strip().lower()  # spot | futures
 
@@ -101,13 +167,23 @@ RETRIES = 2
 # HTTP (GET/JSON, stdlib only)
 # ============================================================
 
-def http_json(url: str, payload: dict | None = None) -> object:
-    """GET (payload=None) or POST-JSON. Never sends credentials."""
+def http_json(
+    url: str,
+    payload: dict | None = None,
+    api_key: str = "",
+) -> object:
+    """GET (payload=None) or POST-JSON. Optional API key goes to x-api-key.
+
+    NOTE: the api_key is ONLY for read-only market-data providers
+    (LiveCoinWatch). It is never sent to the exchange (Bitunix).
+    """
     data = None
     headers = {
         "User-Agent": "MrBiznesPLTRangeScanner/1.0",
         "Accept": "application/json",
     }
+    if api_key:
+        headers["x-api-key"] = api_key
     if payload is not None:
         data = json.dumps(payload).encode("utf-8")
         headers["Content-Type"] = "application/json"
@@ -356,7 +432,12 @@ def analyze_range(candles: list[dict]) -> dict | None:
 # ============================================================
 
 def lcw_top_universe() -> list[str]:
-    """Top coins by market cap from LiveCoinWatch (read-only)."""
+    """Top coins by market cap from LiveCoinWatch (read-only).
+
+    Uses the DEDICATED scanner key (never the bot's shared credential).
+    Resolved at call time, so editing the dedicated env file takes
+    effect on the NEXT cron run without code changes.
+    """
     payload = http_json(
         f"{LCW_BASE}/coins/list",
         payload={
@@ -367,6 +448,7 @@ def lcw_top_universe() -> list[str]:
             "limit": 100,
             "meta": False,
         },
+        api_key=resolve_lcw_key(),
     )
     codes: list[str] = []
     for item in payload if isinstance(payload, list) else []:
@@ -440,6 +522,7 @@ def scan() -> list[dict]:
     print(f"PLT RANGE SCANNER | {now.isoformat(timespec='seconds')}")
     print(f"Tehran time      : {now.astimezone(TEHRAN).isoformat(timespec='seconds')}")
     print(f"Market           : Bitunix {MARKET} (public, read-only, NO API key)")
+    print(f"LCW key          : {lcw_key_source()}")
     print(f"Window           : latest {CANDLE_LIMIT} CLOSED M15 candles ONLY")
     print(f"Indicators       : RSI(14)@CLOSE + SMA(7,25,99) — no FVG")
     print(f"Universe source  : {source}")

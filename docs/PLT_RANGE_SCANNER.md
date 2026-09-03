@@ -50,6 +50,33 @@ local timezone.
 
 ## Environment variables (all optional)
 
+The scanner has its **own dedicated env file** — separate from the bot's `.env`:
+
+```
+.env.plt_range_scanner        # <- dedicated file for THIS cron job (git-ignored)
+```
+
+Template: `.env.plt_range_scanner.example`. Put the scanner's own
+LiveCoinWatch key there (use a SEPARATE key from the bot's, so quota
+and usage stay isolated):
+
+```
+PLT_SCANNER_LIVECOINWATCH_API_KEY=...
+```
+
+**Key precedence** (first non-empty wins — always independent of the bot):
+
+1. env var `PLT_SCANNER_LIVECOINWATCH_API_KEY`
+2. `.env.plt_range_scanner` (dedicated file)
+3. env var / `.env` `LIVECOINWATCH_API_KEY` (legacy fallback)
+
+The key is sent ONLY to LiveCoinWatch (as `x-api-key`); Bitunix calls
+stay credential-free. The file is re-read on every cron run — edit it
+anytime, effective next run. Each scan logs the active key source
+(`LCW key: dedicated-file | shared-env | none ...`) in its banner.
+
+Other optional settings (dedicated file first, shared bot `.env` as fallback):
+
 ```
 PLT_RANGE_MARKET=spot              # spot | futures
 PLT_RANGE_SYMBOLS=BTC,ETH,SOL     # override universe
@@ -59,7 +86,6 @@ PLT_RANGE_MAX_WIDTH_PCT=6.0
 PLT_RANGE_MAX_DIST_SMA25_PCT=2.5
 PLT_RANGE_RSI_MIN=40
 PLT_RANGE_RSI_MAX=60
-LIVECOINWATCH_API_KEY=...          # enables market-cap universe
 LCW_LIMIT=15
 LCW_MIN_CAP_USD=100000000
 ```

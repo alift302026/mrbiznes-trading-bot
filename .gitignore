@@ -6,6 +6,7 @@
 .env
 .env.*
 !.env.example
+!.env.plt_range_scanner.example
 
 # Virtual environments
 venv/
