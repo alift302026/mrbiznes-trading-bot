@@ -1095,7 +1095,7 @@ async def payment_message(
     ).strip()
 
     if text in MENU_BUTTON_TEXTS or text.startswith("/") or text in {"انصراف", "لغو", "بازگشت"}:
-        clear_payment_input(context)
+        clear_payment_flow(context)
         if text in {"انصراف", "لغو", "بازگشت"}:
             await update.message.reply_text("فرآیند پرداخت لغو شد.")
             return True

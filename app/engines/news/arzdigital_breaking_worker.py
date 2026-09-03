@@ -1,3 +1,4 @@
+import asyncio
 import html
 import logging
 import os
@@ -868,7 +869,10 @@ async def arzdigital_breaking_job(
 
     try:
 
-        items = _fetch_feed()
+        # blocking HTTP fetch must not stall the event loop
+        items = await asyncio.to_thread(
+            _fetch_feed
+        )
 
     except Exception:
 

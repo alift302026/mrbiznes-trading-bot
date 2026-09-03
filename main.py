@@ -1,5 +1,7 @@
 import logging
 
+import os
+
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -186,8 +188,24 @@ from app.engines.news.economic_calendar_worker import (
     economic_calendar_sync_job,
 )
 
+from app.engines.news.arzdigital_breaking_worker import (
+    arzdigital_breaking_job,
+)
+
+from app.engines.news.wallex_news_worker import (
+    wallex_news_job,
+)
+
 from app.engines.alerts.alert_worker import (
     market_alert_job,
+)
+
+from app.engines.signals.final_signal_worker import (
+    final_signal_job,
+)
+
+from app.bot.final_signal_handlers import (
+    signal_preview_command,
 )
 
 
@@ -1089,6 +1107,14 @@ def build_application():
         )
     )
 
+    # FINAL SIGNAL PREVIEW (ADMIN)
+    application.add_handler(
+        CommandHandler(
+            "signalpreview",
+            signal_preview_command,
+        )
+    )
+
     # MEMBERSHIP
     application.add_handler(
         CallbackQueryHandler(
@@ -1221,7 +1247,7 @@ def build_application():
     application.add_handler(
         CallbackQueryHandler(
             signal_callback,
-            pattern=r"signal_",
+            pattern=r"^signal_",
         )
     )
 
@@ -1297,6 +1323,44 @@ def build_application():
 
         logger.info(
             "Economic Calendar Worker: ON"
+        )
+
+    # FINAL SIGNAL WORKER (HOURLY)
+    if application.job_queue is not None:
+        application.job_queue.run_repeating(
+            final_signal_job,
+            interval=3600,
+            first=60,
+            name="final-signal-worker",
+        )
+
+        logger.info(
+            "Final Signal Worker: ON"
+        )
+
+    # NEWS WORKERS (only when NEWS_CHANNEL_ID is set)
+    news_channel_id = (
+        os.getenv("NEWS_CHANNEL_ID", "").strip()
+    )
+
+    if news_channel_id and application.job_queue is not None:
+
+        application.job_queue.run_repeating(
+            arzdigital_breaking_job,
+            interval=120,
+            first=30,
+            name="arzdigital-breaking-worker",
+        )
+
+        application.job_queue.run_repeating(
+            wallex_news_job,
+            interval=300,
+            first=45,
+            name="wallex-news-worker",
+        )
+
+        logger.info(
+            "News Workers: ON"
         )
 
     return application

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from typing import Optional
@@ -30,7 +31,10 @@ async def wallex_news_job(
 
     try:
         channel_id = int(value)
-        items = fetch_wallex_news()
+        # blocking HTTP fetch must not stall the event loop
+        items = await asyncio.to_thread(
+            fetch_wallex_news
+        )
     except Exception:
         logger.exception(
             "Wallex RSS fetch failed"
