@@ -92,6 +92,13 @@ def market_keyboard():
         [
             [
                 InlineKeyboardButton(
+                    "🌍 سشن‌های بازار",
+                    callback_data="session_home",
+                ),
+            ],
+
+            [
+                InlineKeyboardButton(
                     "₿ Top 10 Crypto",
                     callback_data="market_crypto",
                 ),

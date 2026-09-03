@@ -15,11 +15,11 @@ def main_menu(
             t(language, "signals"),
         ],
         [
+            t(language, "sessions"),
             t(language, "alerts"),
-            t(language, "plt"),
         ],
         [
-            t(language, "sessions"),
+            t(language, "plt"),
             t(language, "journal"),
         ],
         [

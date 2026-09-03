@@ -667,9 +667,21 @@ async def menu_router(
 
     # ========================================================
     # 1. MAIN MENU BUTTONS (Flexible Matching - Checked FIRST)
+    #
+    # NOTE: SESSIONS must be checked BEFORE MARKETS — the sessions
+    # button text ("سشن‌های بازار") contains the word "بازار", so a
+    # market-first check would swallow it and sessions would become
+    # unreachable (looked like sessions were merged into markets).
     # ========================================================
 
     t_clean = text.lower()
+
+    # SESSIONS (before MARKETS — see note above)
+    if "سشن" in text or "session" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await sessions_page(update, context)
+        return
 
     # MARKET
     if "بازار" in text or "market" in t_clean:
@@ -704,13 +716,6 @@ async def menu_router(
         if context.user_data:
             context.user_data.clear()
         await alerts_home(update, context)
-        return
-
-    # SESSIONS
-    if "سشن" in text or "session" in t_clean:
-        if context.user_data:
-            context.user_data.clear()
-        await sessions_page(update, context)
         return
 
     # PSYCHOLOGY
