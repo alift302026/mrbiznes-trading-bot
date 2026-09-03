@@ -97,24 +97,6 @@ def _main_keyboard() -> InlineKeyboardMarkup:
         [
             [
                 InlineKeyboardButton(
-                    "⚡ سیگنال‌های نهایی S4 (خودکار ساعتی)",
-                    callback_data=(
-                        "signal_final_home"
-                    ),
-                    style="primary",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    "🎯 برترین ستاپ‌ها",
-                    callback_data=(
-                        "signal_top_setups"
-                    ),
-                    style="primary",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
                     "🟢 20 صعودی",
                     callback_data=(
                         "signal_winners"
@@ -140,14 +122,6 @@ def _main_keyboard() -> InlineKeyboardMarkup:
                     "🚀 مومنتوم",
                     callback_data=(
                         "signal_momentum"
-                    ),
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    "⚡ فعالیت غیرعادی",
-                    callback_data=(
-                        "signal_activity"
                     ),
                 ),
             ],
@@ -566,8 +540,6 @@ async def signal_center(
 
         text = (
             "📡 MRBIZNES SIGNAL TERMINAL\n\n"
-            "⚡ Final S4 Signals: اسکن خودکار هر ساعت\n"
-            "🎯 Multi-Timeframe Setups\n"
             "🟢 Top 20 Gainers\n"
             "🔴 Top 20 Losers\n"
             "📊 Volume Intelligence\n"
