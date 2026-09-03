@@ -1,197 +1,137 @@
+import logging
+import re
+from typing import List, Optional
+
 import ccxt.async_support as ccxt
+import requests
+
+from app.core.config import XT_API_KEY, XT_SECRET_KEY
+
+logger = logging.getLogger(__name__)
 
 
-# ============================================================
-# NORMALIZE CRYPTO SYMBOL
-# ============================================================
+# List of top standard crypto pairs on XT Spot
+POPULAR_XT_SYMBOLS = [
+    "BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT",
+    "DOGE/USDT", "TON/USDT", "PEPE/USDT", "SUI/USDT", "AVAX/USDT",
+    "ADA/USDT", "NEAR/USDT", "SHIB/USDT", "LINK/USDT", "LTC/USDT",
+    "DOT/USDT", "TRX/USDT", "UNI/USDT", "ATOM/USDT", "ICP/USDT",
+    "APT/USDT", "ARB/USDT", "OP/USDT", "INJ/USDT", "TIA/USDT",
+    "FET/USDT", "RENDER/USDT", "NOT/USDT", "WIF/USDT", "BONK/USDT",
+    "FLOKI/USDT", "KAS/USDT", "SEI/USDT", "TAO/USDT", "JUP/USDT",
+    "STX/USDT", "FIL/USDT", "XLM/USDT", "BCH/USDT", "ETC/USDT",
+]
 
-def normalize_crypto_symbol(
-    value,
-):
 
-    value = (
-        value
-        .strip()
-        .upper()
-        .replace(
-            " ",
-            "",
-        )
-    )
-
+def normalize_crypto_symbol(value: str) -> Optional[str]:
     if not value:
         return None
 
+    value = str(value).strip().upper().replace(" ", "")
+
+    # Replace separators like _ or - with /
+    value = value.replace("-", "/").replace("_", "/")
+
     # BTCUSDT -> BTC/USDT
-    if (
-        "/" not in value
-        and value.endswith(
-            "USDT"
-        )
-    ):
-
+    if "/" not in value and value.endswith("USDT") and len(value) > 4:
         base = value[:-4]
-
         if base:
-
-            value = (
-                f"{base}/USDT"
-            )
+            return f"{base}/USDT"
 
     # BTC -> BTC/USDT
     elif "/" not in value:
-
-        value = (
-            f"{value}/USDT"
-        )
+        return f"{value}/USDT"
 
     return value
 
 
-# ============================================================
-# VALIDATE BINANCE SPOT
-# ============================================================
+def create_xt_exchange():
+    config = {
+        "enableRateLimit": True,
+        "timeout": 15000,
+    }
+    if XT_API_KEY:
+        config["apiKey"] = XT_API_KEY
+    if XT_SECRET_KEY:
+        config["secret"] = XT_SECRET_KEY
 
-async def validate_crypto_symbol(
-    value,
-):
+    return ccxt.xt(config)
 
-    symbol = normalize_crypto_symbol(
-        value
-    )
 
+async def validate_crypto_symbol(value: str) -> Optional[str]:
+    symbol = normalize_crypto_symbol(value)
     if not symbol:
         return None
 
-    exchange = ccxt.binance(
-        {
-            "enableRateLimit":
-                True,
+    # Check popular list first for instant response
+    if symbol in POPULAR_XT_SYMBOLS:
+        return symbol
 
-            "timeout":
-                20000,
-        }
-    )
-
+    # Try XT CCXT
+    exchange = create_xt_exchange()
     try:
-
         markets = await exchange.load_markets()
-
-        market = markets.get(
-            symbol
-        )
-
-        if market is None:
-            return None
-
-        if not market.get(
-            "spot",
-            False,
-        ):
-            return None
-
-        if not market.get(
-            "active",
-            True,
-        ):
-            return None
-
-        return market[
-            "symbol"
-        ]
-
+        if symbol in markets:
+            market = markets[symbol]
+            if market.get("active", True):
+                return market.get("symbol", symbol)
+    except Exception as exc:
+        logger.debug("XT ccxt validate error: %s", exc)
     finally:
+        try:
+            await exchange.close()
+        except Exception:
+            pass
 
-        await exchange.close()
+    # If format is standard Base/USDT with 2-10 char base, treat as valid XT candidate
+    parts = symbol.split("/")
+    if len(parts) == 2 and parts[1] == "USDT" and 2 <= len(parts[0]) <= 12 and parts[0].isalnum():
+        return symbol
+
+    return None
 
 
-# ============================================================
-# SEARCH BINANCE SPOT
-# ============================================================
+async def search_crypto_symbols(query: str, limit: int = 10) -> List[str]:
+    q = query.strip().upper().replace("/", "").replace("_", "")
+    if not q:
+        return POPULAR_XT_SYMBOLS[:limit]
 
-async def search_crypto_symbols(
-    query,
-    limit=10,
-):
+    # Search in popular XT list first
+    matches = []
+    for s in POPULAR_XT_SYMBOLS:
+        base = s.split("/")[0]
+        if q in base or q in s.replace("/", ""):
+            matches.append(s)
 
-    query = (
-        query
-        .strip()
-        .upper()
-    )
-
-    if not query:
-        return []
-
-    exchange = ccxt.binance(
-        {
-            "enableRateLimit":
-                True,
-
-            "timeout":
-                20000,
-        }
-    )
-
+    # Try XT exchange
+    exchange = create_xt_exchange()
     try:
-
         markets = await exchange.load_markets()
-
-        results = []
-
-        for symbol, market in markets.items():
-
-            if not market.get(
-                "spot",
-                False,
-            ):
+        for s, market in markets.items():
+            if market.get("quote") != "USDT":
                 continue
-
-            if not market.get(
-                "active",
-                True,
-            ):
-                continue
-
-            if market.get(
-                "quote"
-            ) != "USDT":
-
-                continue
-
-            base = (
-                market.get(
-                    "base",
-                    "",
-                )
-                or ""
-            )
-
-            if (
-                query not in base.upper()
-                and
-                query not in symbol.upper()
-            ):
-                continue
-
-            results.append(
-                symbol
-            )
-
-        results.sort(
-            key=lambda item: (
-                not item.startswith(
-                    query
-                ),
-                len(item),
-                item,
-            )
-        )
-
-        return results[
-            :limit
-        ]
-
+            base = market.get("base", "")
+            if q in base.upper() or q in s.upper():
+                if s not in matches:
+                    matches.append(s)
+            if len(matches) >= limit * 2:
+                break
+    except Exception as exc:
+        logger.debug("XT search ccxt error: %s", exc)
     finally:
+        try:
+            await exchange.close()
+        except Exception:
+            pass
 
-        await exchange.close()
+    # Sort so prefix matches come first
+    matches.sort(
+        key=lambda item: (
+            not item.startswith(f"{q}/"),
+            not item.replace("/USDT", "").startswith(q),
+            len(item),
+            item,
+        )
+    )
+
+    return matches[:limit]

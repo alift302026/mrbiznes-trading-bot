@@ -261,8 +261,20 @@ def find_user(
     if not value:
         return None
 
+    # Strip prefixes like https://t.me/, t.me/, @
+    if value.startswith("https://t.me/"):
+        value = value.replace("https://t.me/", "")
+    elif value.startswith("http://t.me/"):
+        value = value.replace("http://t.me/", "")
+    elif value.startswith("t.me/"):
+        value = value.replace("t.me/", "")
+
     if value.startswith("@"):
         value = value[1:]
+
+    value = value.strip()
+    if not value:
+        return None
 
     with SessionLocal() as db:
 
@@ -495,34 +507,44 @@ def give_vip(
         )
 
         if user is None:
-            return False
-
-        if (
-            user.membership_type
-            == "vip"
-            and user.vip_expires_at
-            and user.vip_expires_at
-            > now
-        ):
-
-            start = (
-                user.vip_expires_at
+            # Create user on the fly if not in database
+            user = User(
+                telegram_id=telegram_id,
+                membership_type="vip",
+                language="fa",
+                points=0,
+                vip_expires_at=now + timedelta(days=days),
             )
-
+            db.add(user)
+            db.commit()
+            db.refresh(user)
         else:
+            if (
+                user.membership_type
+                == "vip"
+                and user.vip_expires_at
+                and user.vip_expires_at
+                > now
+            ):
 
-            start = now
+                start = (
+                    user.vip_expires_at
+                )
 
-        user.membership_type = "vip"
+            else:
 
-        user.vip_expires_at = (
-            start
-            + timedelta(
-                days=days
+                start = now
+
+            user.membership_type = "vip"
+
+            user.vip_expires_at = (
+                start
+                + timedelta(
+                    days=days
+                )
             )
-        )
 
-        db.commit()
+            db.commit()
 
     audit(
         admin_id=admin_id,

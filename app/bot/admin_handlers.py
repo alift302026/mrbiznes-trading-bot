@@ -1,3 +1,7 @@
+import logging
+import re
+from typing import Optional
+
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -34,6 +38,96 @@ from app.services.support_service import (
     open_tickets,
     ticket_messages,
 )
+
+logger = logging.getLogger(
+    __name__
+)
+
+MENU_BUTTON_TEXTS = {
+    "📊 بازارها",
+    "📡 سیگنال‌ها",
+    "🔔 آلارم‌ها",
+    "🧠 PLT تحلیل چارت",
+    "🌍 سشن‌های بازار",
+    "📓 ژورنال معاملاتی",
+    "🧠 روانشناسی ترید",
+    "💎 VIP و پرداخت",
+    "🎁 رفرال و امتیاز",
+    "📈 عملکرد ماهانه",
+    "🏦 صرافی‌های ما",
+    "🎧 پشتیبانی",
+    "🤝 درباره ما",
+    "👤 حساب من",
+    "🛡 مدیریت",
+}
+
+
+def to_english_digits(text: str) -> str:
+    if not text:
+        return ""
+    trans = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+    return str(text).translate(trans)
+
+
+def extract_int(text: str) -> Optional[int]:
+    clean = to_english_digits(str(text)).strip()
+    match = re.search(r"[-+]?\d+", clean)
+    if match:
+        try:
+            return int(match.group(0))
+        except ValueError:
+            return None
+    return None
+
+
+def parse_vip_days(text: str) -> Optional[int]:
+    if not text:
+        return None
+    raw = to_english_digits(str(text)).strip().lower()
+
+    if "یک سال" in text or "1 سال" in raw or "یکسال" in text or "1year" in raw or "1 year" in raw:
+        return 365
+    if "شش ماه" in text or "6 ماه" in raw or "6ماه" in text or "نیم سال" in text or "6 month" in raw:
+        return 180
+    if "سه ماه" in text or "3 ماه" in raw or "3ماه" in text or "3 month" in raw:
+        return 90
+    if "دو ماه" in text or "2 ماه" in raw or "2ماه" in text or "2 month" in raw:
+        return 60
+    if "یک ماه" in text or "1 ماه" in raw or "1ماه" in text or "یکماه" in text or "1 month" in raw:
+        return 30
+    if "یک هفته" in text or "1 هفته" in raw or "1هفته" in text or "1 week" in raw:
+        return 7
+
+    match = re.search(r"\d+", raw)
+    if match:
+        try:
+            val = int(match.group(0))
+            if 1 <= val <= 3650:
+                return val
+        except ValueError:
+            pass
+    return None
+
+
+def vip_duration_keyboard(telegram_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("💎 ۳۰ روز (۱ ماه)", callback_data=f"admin_vipdays_{telegram_id}_30"),
+                InlineKeyboardButton("💎 ۶۰ روز (۲ ماه)", callback_data=f"admin_vipdays_{telegram_id}_60"),
+            ],
+            [
+                InlineKeyboardButton("💎 ۹۰ روز (۳ ماه)", callback_data=f"admin_vipdays_{telegram_id}_90"),
+                InlineKeyboardButton("💎 ۱۸۰ روز (۶ ماه)", callback_data=f"admin_vipdays_{telegram_id}_180"),
+            ],
+            [
+                InlineKeyboardButton("💎 ۳۶۵ روز (۱ سال)", callback_data=f"admin_vipdays_{telegram_id}_365"),
+            ],
+            [
+                InlineKeyboardButton("⬅️ بازگشت به کاربر", callback_data=f"admin_user_{telegram_id}"),
+            ],
+        ]
+    )
 
 
 # ============================================================
@@ -678,6 +772,20 @@ async def admin_callback(
 
             return
 
+        try:
+            await context.bot.send_message(
+                chat_id=telegram_id,
+                text=(
+                    "💎 اشتراک VIP مستر بیزنس فعال شد!\n"
+                    "━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "✅ دسترسی حساب شما به مدت ۳۰ روز به سطح VIP ارتقا یافت.\n"
+                    "از همراهی شما با مستر بیزنس سپاسگزاریم 🚀"
+                ),
+            )
+        except Exception:
+            pass
+
+        await query.answer("✅ ۳۰ روز VIP با موفقیت فعال شد.", show_alert=True)
         await query.edit_message_text(
             user_text(user),
             reply_markup=(
@@ -686,6 +794,43 @@ async def admin_callback(
         )
 
         return
+
+    # VIP PRESET DAYS (e.g. admin_vipdays_123456_90)
+    if data.startswith("admin_vipdays_"):
+        parts = data.replace("admin_vipdays_", "").split("_")
+        if len(parts) == 2:
+            try:
+                target_id = int(parts[0])
+                days = int(parts[1])
+            except ValueError:
+                return
+
+            context.user_data.pop("admin_input", None)
+            success = give_vip(admin_id, target_id, days)
+            user = get_admin_user(target_id)
+            if not success or user is None:
+                await query.answer("خطا در اعمال VIP", show_alert=True)
+                return
+
+            try:
+                await context.bot.send_message(
+                    chat_id=target_id,
+                    text=(
+                        "💎 اشتراک VIP مستر بیزنس فعال شد!\n"
+                        "━━━━━━━━━━━━━━━━━━━━━\n\n"
+                        f"✅ دسترسی حساب شما به مدت {days} روز به سطح VIP ارتقا یافت.\n"
+                        "از همراهی شما با مستر بیزنس سپاسگزاریم 🚀"
+                    ),
+                )
+            except Exception:
+                pass
+
+            await query.answer(f"✅ {days} روز VIP با موفقیت فعال شد.", show_alert=True)
+            await query.edit_message_text(
+                user_text(user),
+                reply_markup=user_keyboard(user),
+            )
+            return
 
     # CUSTOM VIP
 
@@ -713,14 +858,12 @@ async def admin_callback(
 
         await query.edit_message_text(
             (
-                "💎 CUSTOM VIP\n"
-                "━━━━━━━━━━━━━━━━\n\n"
-
-                f"User: {telegram_id}\n\n"
-
-                "تعداد روز VIP را ارسال کن.\n"
-                "مثال: 90"
-            )
+                "💎 تعیین مدت اشتراک VIP\n"
+                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"👤 کاربر: {telegram_id}\n\n"
+                "یکی از بازه‌های آماده زیر را انتخاب کنید یا تعداد روز دلخواه را تایپ کنید (مثلاً ۹۰ یا ۱ سال):"
+            ),
+            reply_markup=vip_duration_keyboard(telegram_id),
         )
 
         return
@@ -1139,6 +1282,14 @@ async def admin_message(
         or ""
     ).strip()
 
+    # Check if admin pressed a main menu button or command or cancel
+    if text in MENU_BUTTON_TEXTS or text.startswith("/") or text in {"انصراف", "لغو", "بازگشت", "cancel"}:
+        context.user_data.pop("admin_input", None)
+        if text in {"انصراف", "لغو", "بازگشت", "cancel"}:
+            await update.message.reply_text("عملیات مدیریت لغو شد.", reply_markup=admin_keyboard())
+            return True
+        return False
+
     mode = pending[
         "mode"
     ]
@@ -1159,7 +1310,8 @@ async def admin_message(
         if user is None:
 
             await update.message.reply_text(
-                "❌ User not found.",
+                "❌ کاربر موردنظر یافت نشد.\n\n"
+                "می‌توانید شناسه عددی (Telegram ID) یا یوزرنیم کاربر را ارسال کنید.",
                 reply_markup=(
                     admin_keyboard()
                 ),
@@ -1184,16 +1336,13 @@ async def admin_message(
 
     if mode == "vip_days":
 
-        try:
+        days = parse_vip_days(text)
 
-            days = int(
-                text
-            )
-
-        except ValueError:
+        if days is None or days <= 0 or days > 3650:
 
             await update.message.reply_text(
-                "❌ عدد روز معتبر نیست."
+                "❌ لطفاً تعداد روز را به صورت عدد معتبر ارسال کنید (مثلاً ۳۰ یا ۹۰ یا ۱ سال).\n"
+                "برای انصراف کلمه «لغو» را ارسال کنید."
             )
 
             return True
@@ -1223,7 +1372,7 @@ async def admin_message(
         ):
 
             await update.message.reply_text(
-                "❌ VIP update failed.",
+                "❌ خطا در اعمال اشتراک VIP.",
                 reply_markup=(
                     admin_keyboard()
                 ),
@@ -1231,8 +1380,21 @@ async def admin_message(
 
             return True
 
+        try:
+            await context.bot.send_message(
+                chat_id=telegram_id,
+                text=(
+                    "💎 اشتراک VIP مستر بیزنس فعال شد!\n"
+                    "━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"✅ دسترسی حساب شما به مدت {days} روز به سطح VIP ارتقا یافت.\n"
+                    "از همراهی شما با مستر بیزنس سپاسگزاریم 🚀"
+                ),
+            )
+        except Exception:
+            pass
+
         await update.message.reply_text(
-            "✅ VIP updated.",
+            f"✅ اشتراک VIP به مدت {days} روز با موفقیت ثبت شد.",
             reply_markup=(
                 user_keyboard(
                     user
@@ -1246,16 +1408,13 @@ async def admin_message(
 
     if mode == "points":
 
-        try:
+        amount = extract_int(text)
 
-            amount = int(
-                text
-            )
-
-        except ValueError:
+        if amount is None:
 
             await update.message.reply_text(
-                "❌ عدد معتبر نیست."
+                "❌ لطفاً مقدار امتیاز را به صورت عدد معتبر ارسال کنید (مثلاً ۵۰ یا -20).\n"
+                "برای انصراف کلمه «لغو» را ارسال کنید."
             )
 
             return True
@@ -1292,8 +1451,8 @@ async def admin_message(
 
         await update.message.reply_text(
             (
-                f"✅ Points updated.\n"
-                f"New balance: {user.points}"
+                f"✅ امتیاز به‌روزرسانی شد.\n"
+                f"موجودی جدید: {user.points}"
             ),
             reply_markup=(
                 user_keyboard(
@@ -1454,6 +1613,113 @@ async def admin_message(
         return True
 
     return False
+
+
+# ============================================================
+# DIRECT ADMIN COMMANDS
+# ============================================================
+
+async def admin_givevip_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+):
+    user = update.effective_user
+    if user is None or not is_admin(user.id):
+        return
+
+    args = context.args or []
+    if not args:
+        await update.message.reply_text(
+            "📌 راهنمای دستور اعطای VIP:\n"
+            "`/givevip <ID_or_@username> [days]`\n\n"
+            "مثال:\n"
+            "`/givevip 123456789 30`\n"
+            "`/givevip @username 60`\n"
+            "`/givevip 123456789 1 سال`",
+            parse_mode="Markdown",
+        )
+        return
+
+    target = args[0].strip()
+    days = 30
+    if len(args) > 1:
+        parsed_days = parse_vip_days(" ".join(args[1:]))
+        if parsed_days:
+            days = parsed_days
+
+    found = find_user(target)
+    target_id = None
+    if found:
+        target_id = found.telegram_id
+    elif to_english_digits(target).isdigit():
+        target_id = int(to_english_digits(target))
+
+    if not target_id:
+        await update.message.reply_text("❌ کاربر موردنظر یافت نشد.")
+        return
+
+    success = give_vip(user.id, target_id, days)
+    if not success:
+        await update.message.reply_text("❌ خطا در اعمال اشتراک VIP.")
+        return
+
+    updated = get_admin_user(target_id)
+    # Try notifying user
+    try:
+        await context.bot.send_message(
+            chat_id=target_id,
+            text=(
+                "💎 اشتراک VIP مستر بیزنس فعال شد!\n"
+                "━━━━━━━━━━━━━━━━━━━━━\n\n"
+                "✅ دسترسی حساب شما با موفقیت به سطح VIP ارتقا یافت.\n"
+                f"📅 مهلت اعتبار: {days} روز\n\n"
+                "از همراهی شما با مستر بیزنس سپاسگزاریم 🚀"
+            ),
+        )
+    except Exception:
+        pass
+
+    await update.message.reply_text(
+        f"✅ اشتراک VIP برای کاربر {target_id} به مدت {days} روز با موفقیت فعال شد.",
+        reply_markup=user_keyboard(updated) if updated else admin_keyboard(),
+    )
+
+
+async def admin_removevip_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+):
+    user = update.effective_user
+    if user is None or not is_admin(user.id):
+        return
+
+    args = context.args or []
+    if not args:
+        await update.message.reply_text(
+            "📌 راهنمای دستور حذف VIP:\n"
+            "`/removevip <ID_or_@username>`",
+            parse_mode="Markdown",
+        )
+        return
+
+    target = args[0].strip()
+    found = find_user(target)
+    target_id = None
+    if found:
+        target_id = found.telegram_id
+    elif to_english_digits(target).isdigit():
+        target_id = int(to_english_digits(target))
+
+    if not target_id:
+        await update.message.reply_text("❌ کاربر موردنظر یافت نشد.")
+        return
+
+    remove_vip(user.id, target_id)
+    updated = get_admin_user(target_id)
+    await update.message.reply_text(
+        f"✅ اشتراک VIP کاربر {target_id} غیرفعال شد.",
+        reply_markup=user_keyboard(updated) if updated else admin_keyboard(),
+    )
 
 
 # ============================================================

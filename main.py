@@ -47,6 +47,7 @@ from app.models.payment import Payment
 from app.models.discount import DiscountCode
 from app.models.performance import MonthlyPerformance
 from app.models.alert import MarketAlert
+from app.models.journal import TradeJournal
 
 from app.models.psychology import (
     EndOfDayCheck,
@@ -76,11 +77,6 @@ from app.models.admin_audit import (
 # BOT HANDLERS
 # ============================================================
 
-from app.bot.language_handlers import (
-    language_callback,
-    language_page,
-)
-
 from app.bot.market_handlers import (
     market_callback,
     market_home,
@@ -95,16 +91,10 @@ from app.bot.signal_handlers import (
     signal_callback,
 )
 
-from app.bot.final_signal_handlers import (
-    signal_preview_command,
-)
-
 from app.bot.plt_handlers import (
+    plt_callback,
+    plt_entry,
     plt_photo_handler,
-)
-
-from app.engines.signals.final_signal_worker import (
-    final_signal_job,
 )
 
 from app.bot.session_handlers import (
@@ -114,6 +104,12 @@ from app.bot.session_handlers import (
 
 from app.bot.welcome_handlers import (
     send_welcome,
+)
+
+from app.bot.journal_handlers import (
+    journal_callback,
+    journal_home,
+    journal_message,
 )
 
 from app.bot.psychology_handlers import (
@@ -150,8 +146,10 @@ from app.bot.about_handlers import (
 
 from app.bot.admin_handlers import (
     admin_callback,
+    admin_givevip_command,
     admin_home,
     admin_message,
+    admin_removevip_command,
 )
 
 from app.bot.exchange_handlers import (
@@ -183,8 +181,6 @@ from app.bot.admin_payment_handlers import (
 from app.engines.sessions.alert_engine import (
     session_alert_job,
 )
-
-
 
 from app.engines.news.economic_calendar_worker import (
     economic_calendar_sync_job,
@@ -363,6 +359,10 @@ async def start(
     ):
         return
 
+    # Clear any previous pending state/traps
+    if context.user_data is not None:
+        context.user_data.clear()
+
     referral_code = None
 
     if context.args:
@@ -449,19 +449,8 @@ async def start(
         update
     )
 
-    # Language
-    if not user.language:
-
-        await language_page(
-            update,
-            context,
-        )
-
-        return
-
-    language = (
-        user.language
-    )
+    # Always default to Persian
+    language = "fa"
 
     await update.message.reply_text(
         (
@@ -560,26 +549,19 @@ async def account_page(
         "👤 MrBiznes ACCOUNT\n"
         "━━━━━━━━━━━━━━━━\n\n"
 
-        f"🆔 Telegram ID\n"
-        f"{user.telegram_id}\n\n"
+        f"🆔 شناسه کاربری:\n{user.telegram_id}\n\n"
 
-        f"👤 Name\n"
-        f"{user.first_name or '-'}\n\n"
+        f"👤 نام:\n{user.first_name or '-'}\n\n"
 
-        f"🔗 Username\n"
-        f"{username}\n\n"
+        f"🔗 نام کاربری:\n{username}\n\n"
 
-        f"💎 Plan\n"
-        f"{user.membership_type.upper()}\n\n"
+        f"💎 نوع حساب:\n{user.membership_type.upper()}\n\n"
 
-        f"📆 VIP Expire\n"
-        f"{vip_expire}\n\n"
+        f"📆 انقضای VIP:\n{vip_expire}\n\n"
 
-        f"⭐ Points\n"
-        f"{user.points}\n\n"
+        f"⭐ امتیازها:\n{user.points}\n\n"
 
-        f"🎁 Referral\n"
-        f"{user.referral_code or '-'}"
+        f"🎁 کد معرف شما:\n{user.referral_code or '-'}"
     )
 
     await update.message.reply_text(
@@ -667,174 +649,192 @@ async def menu_router(
 
         return
 
-    language = (
-        user.language
-        or "fa"
-    )
+    language = "fa"
 
     text = (
         update.message.text
         or ""
-    )
+    ).strip()
 
-    # --------------------------------------------------------
+    # ========================================================
+    # 1. MAIN MENU BUTTONS (Flexible Matching - Checked FIRST)
+    # ========================================================
+
+    t_clean = text.lower()
+
+    # MARKET
+    if "بازار" in text or "market" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await market_home(update, context)
+        return
+
+    # SIGNALS
+    if "سیگنال" in text or "signal" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await signal_center(update, context)
+        return
+
+    # PLT CHART AI
+    if "plt" in t_clean or "تحلیل چارت" in text:
+        if context.user_data:
+            context.user_data.clear()
+        await plt_entry(update, context)
+        return
+
+    # JOURNAL
+    if "ژورنال" in text or "journal" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await journal_home(update, context)
+        return
+
+    # ALERTS
+    if "آلارم" in text or "هشدار" in text or "alert" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await alerts_home(update, context)
+        return
+
+    # SESSIONS
+    if "سشن" in text or "session" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await sessions_page(update, context)
+        return
+
+    # PSYCHOLOGY
+    if "روانشناسی" in text or "psychology" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await psychology_home(update, context)
+        return
+
+    # ACCOUNT
+    if "حساب" in text or "account" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await account_page(update, user, language)
+        return
+
+    # REFERRAL
+    if "رفرال" in text or "امتیاز" in text or "reward" in t_clean or "referral" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await referral_home(update, context)
+        return
+
+    # SUPPORT
+    if "پشتیبانی" in text or "support" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await support_home(update, context)
+        return
+
+    # ABOUT
+    if "درباره" in text or "about" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await about_home(update, context)
+        return
+
+    # OUR EXCHANGES
+    if "صرافی" in text or "exchange" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await exchanges_home(update, context)
+        return
+
+    # VIP / PAYMENT
+    if "vip" in t_clean or "پرداخت" in text or "اشتراک" in text or "payment" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await payment_home(update, context)
+        return
+
+    # PERFORMANCE
+    if "عملکرد" in text or "کارنامه" in text or "performance" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await performance_home(update, context)
+        return
+
+    # ADMIN
+    if "مدیریت" in text or "admin" in t_clean:
+        if telegram_user.id not in ADMIN_IDS:
+            await update.message.reply_text(
+                t(language, "access_denied")
+            )
+            return
+
+        if context.user_data:
+            context.user_data.clear()
+        await admin_home(update, context)
+        return
+
+    # OLD LANGUAGE BUTTON (If clicked from old cached keyboard)
+    if "زبان" in text or "language" in t_clean:
+        if context.user_data:
+            context.user_data.clear()
+        await update.message.reply_text(
+            "🌐 زبان ربات به صورت دائمی روی **فارسی** تنظیم شده است.\n\n"
+            "منوی جدید برای شما بارگذاری شد 👇",
+            parse_mode="Markdown",
+            reply_markup=main_menu(language, telegram_user.id in ADMIN_IDS),
+        )
+        return
+
+    # ========================================================
+    # 2. PENDING TEXT INPUT HANDLERS (Only if not a menu button)
+    # ========================================================
+
     # ADMIN INPUT
-    # --------------------------------------------------------
-
     handled = await admin_message(
         update,
         context,
     )
-
     if handled:
         return
 
-    # --------------------------------------------------------
-    # ASSET SEARCH
-    # --------------------------------------------------------
+    # JOURNAL INPUT
+    handled = await journal_message(
+        update,
+        context,
+    )
+    if handled:
+        return
 
+    # ASSET SEARCH
     handled = await asset_message(
         update,
         context,
     )
-
     if handled:
         return
 
-    # --------------------------------------------------------
     # ALERT INPUT
-    # --------------------------------------------------------
-
-    handled = (
-        await alert_price_message(
-            update,
-            context,
-        )
+    handled = await alert_price_message(
+        update,
+        context,
     )
-
     if handled:
         return
 
-    # --------------------------------------------------------
     # PAYMENT INPUT
-    # --------------------------------------------------------
-
     handled = await payment_message(
         update,
         context,
     )
-
     if handled:
         return
 
-
-    # --------------------------------------------------------
     # SUPPORT INPUT
-    # --------------------------------------------------------
-
     handled = await support_message(
         update,
         context,
     )
-
     if handled:
-        return
-
-    # --------------------------------------------------------
-    # MARKET
-    # --------------------------------------------------------
-
-    if text == t(
-        language,
-        "markets",
-    ):
-
-        await market_home(
-            update,
-            context,
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # ALERTS
-    # --------------------------------------------------------
-
-    if text == t(
-        language,
-        "alerts",
-    ):
-
-        await alerts_home(
-            update,
-            context,
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # PSYCHOLOGY
-    # --------------------------------------------------------
-
-    if text == t(
-        language,
-        "psychology",
-    ):
-
-        await psychology_home(
-            update,
-            context,
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # SESSIONS
-    # --------------------------------------------------------
-
-    if text == t(
-        language,
-        "sessions",
-    ):
-
-        await sessions_page(
-            update,
-            context,
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # LANGUAGE
-    # --------------------------------------------------------
-
-    if text == t(
-        language,
-        "language",
-    ):
-
-        await language_page(
-            update,
-            context,
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # ACCOUNT
-    # --------------------------------------------------------
-
-    if text == t(
-        language,
-        "account",
-    ):
-
-        await account_page(
-            update,
-            user,
-            language,
-        )
-
         return
 
     # --------------------------------------------------------
@@ -917,7 +917,6 @@ async def menu_router(
 
         return
 
-
     # --------------------------------------------------------
     # PERFORMANCE
     # --------------------------------------------------------
@@ -969,9 +968,6 @@ async def menu_router(
     # --------------------------------------------------------
 
     modules = {
-        "signals":
-            "📡 MrBiznes SIGNAL CENTER",
-
         "watchlist":
             "👁 MrBiznes WATCHLIST",
 
@@ -998,13 +994,6 @@ async def menu_router(
             language,
             key,
         ):
-
-            if key == "signals":
-                await signal_center(
-                    update,
-                    context,
-                )
-                return
 
             await temporary_module(
                 update,
@@ -1059,6 +1048,11 @@ def build_application():
         bind=engine
     )
 
+    if not BOT_TOKEN:
+        raise ValueError(
+            "BOT_TOKEN is missing or empty. Please set BOT_TOKEN in your environment or .env file."
+        )
+
     application = (
         Application.builder()
         .token(BOT_TOKEN)
@@ -1073,15 +1067,7 @@ def build_application():
         )
     )
 
-    # FINAL S4 SIGNAL PREVIEW (admin)
-    application.add_handler(
-        CommandHandler(
-            "signalpreview",
-            signal_preview_command,
-        )
-    )
-
-    # ADMIN PAYMENT COMMAND
+    # ADMIN COMMANDS
     application.add_handler(
         CommandHandler(
             "payments",
@@ -1089,20 +1075,25 @@ def build_application():
         )
     )
 
+    application.add_handler(
+        CommandHandler(
+            "givevip",
+            admin_givevip_command,
+        )
+    )
+
+    application.add_handler(
+        CommandHandler(
+            "removevip",
+            admin_removevip_command,
+        )
+    )
 
     # MEMBERSHIP
     application.add_handler(
         CallbackQueryHandler(
             membership_callback,
             pattern="^check_membership$",
-        )
-    )
-
-    # LANGUAGE
-    application.add_handler(
-        CallbackQueryHandler(
-            language_callback,
-            pattern="^lang_",
         )
     )
 
@@ -1119,6 +1110,14 @@ def build_application():
         CallbackQueryHandler(
             session_callback,
             pattern="^session_",
+        )
+    )
+
+    # JOURNAL
+    application.add_handler(
+        CallbackQueryHandler(
+            journal_callback,
+            pattern="^journal_",
         )
     )
 
@@ -1202,7 +1201,6 @@ def build_application():
         )
     )
 
-
     # ADMIN
     application.add_handler(
         CallbackQueryHandler(
@@ -1211,12 +1209,11 @@ def build_application():
         )
     )
 
-    # TEXT
+    # PLT CALLBACK
     application.add_handler(
-        MessageHandler(
-            filters.TEXT
-            & ~filters.COMMAND,
-            menu_router,
+        CallbackQueryHandler(
+            plt_callback,
+            pattern="^plt_",
         )
     )
 
@@ -1234,6 +1231,15 @@ def build_application():
             filters.PHOTO
             & ~filters.COMMAND,
             plt_photo_handler,
+        )
+    )
+
+    # TEXT
+    application.add_handler(
+        MessageHandler(
+            filters.TEXT
+            & ~filters.COMMAND,
+            menu_router,
         )
     )
 
@@ -1293,23 +1299,6 @@ def build_application():
             "Economic Calendar Worker: ON"
         )
 
-    # NEWS WORKERS REMOVED: @MrBiznesMarket news posting is owned
-    # exclusively by the separate mrbiznes-news-bot service.
-    # (fix: duplicate 2-3x posts when both services posted to the channel)
-
-    # FINAL S4 SIGNAL WORKER (hourly, paper mode unless FINAL_SIGNALS_PUSH=1)
-    if application.job_queue is not None:
-        application.job_queue.run_repeating(
-            final_signal_job,
-            interval=3600,
-            first=60,
-            name="final-signal-worker",
-        )
-
-        logger.info(
-            "Final S4 Signal Worker: ON"
-        )
-
     return application
 
 
@@ -1324,14 +1313,16 @@ def main():
         "========================================\n"
         "             MrBiznes\n"
         "========================================\n"
-        "Languages         : FA / EN / AR\n"
+        "Language          : FA (Persian)\n"
         "Channel           : ENABLED\n"
         "Market            : ENABLED\n"
-        "Sessions          : ENABLED\n"
+        "Sessions Clock    : 24H TEHRAN CLOCK\n"
+        "Trading Journal   : ENABLED\n"
+        "PLT Vision AI     : ENABLED\n"
         "Psychology        : ENABLED\n"
         "Crypto Alerts     : XT\n"
         "Forex Alerts      : TWELVE DATA\n"
-        "Crypto Search     : ENABLED\n"
+        "Crypto Search     : XT SPOT\n"
         "Forex Search      : ENABLED\n"
         "Search Quota      : NORMAL 3/MONTH\n"
         "Referral          : ENABLED\n"

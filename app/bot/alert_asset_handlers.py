@@ -465,6 +465,25 @@ async def asset_callback(
 # TEXT SEARCH
 # ============================================================
 
+MENU_BUTTON_TEXTS = {
+    "📊 بازارها",
+    "📡 سیگنال‌ها",
+    "🔔 آلارم‌ها",
+    "🧠 PLT تحلیل چارت",
+    "🌍 سشن‌های بازار",
+    "📓 ژورنال معاملاتی",
+    "🧠 روانشناسی ترید",
+    "💎 VIP و پرداخت",
+    "🎁 رفرال و امتیاز",
+    "📈 عملکرد ماهانه",
+    "🏦 صرافی‌های ما",
+    "🎧 پشتیبانی",
+    "🤝 درباره ما",
+    "👤 حساب من",
+    "🛡 مدیریت",
+}
+
+
 async def asset_message(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -485,10 +504,6 @@ async def asset_message(
     if not pending:
         return False
 
-    user_id = (
-        update.effective_user.id
-    )
-
     text = (
         update.message.text
         or ""
@@ -496,6 +511,17 @@ async def asset_message(
 
     if not text:
         return True
+
+    if text in MENU_BUTTON_TEXTS or text.startswith("/") or text in {"انصراف", "لغو", "بازگشت"}:
+        clear_asset_input(context)
+        if text in {"انصراف", "لغو", "بازگشت"}:
+            await update.message.reply_text("جستجو لغو شد.")
+            return True
+        return False
+
+    user_id = (
+        update.effective_user.id
+    )
 
     # CRYPTO SEARCH
 

@@ -1507,6 +1507,25 @@ async def begin_custom_input(
 # TEXT INPUT
 # ============================================================
 
+MENU_BUTTON_TEXTS = {
+    "📊 بازارها",
+    "📡 سیگنال‌ها",
+    "🔔 آلارم‌ها",
+    "🧠 PLT تحلیل چارت",
+    "🌍 سشن‌های بازار",
+    "📓 ژورنال معاملاتی",
+    "🧠 روانشناسی ترید",
+    "💎 VIP و پرداخت",
+    "🎁 رفرال و امتیاز",
+    "📈 عملکرد ماهانه",
+    "🏦 صرافی‌های ما",
+    "🎧 پشتیبانی",
+    "🤝 درباره ما",
+    "👤 حساب من",
+    "🛡 مدیریت",
+}
+
+
 async def alert_price_message(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -1518,14 +1537,23 @@ async def alert_price_message(
     ):
         return False
 
-    user_id = (
-        update.effective_user.id
-    )
-
     text = (
         update.message.text
         or ""
     ).strip()
+
+    if text in MENU_BUTTON_TEXTS or text.startswith("/") or text in {"انصراف", "لغو", "بازگشت"}:
+        context.user_data.pop("awaiting_alert_custom", None)
+        context.user_data.pop("awaiting_alert_price", None)
+        context.user_data.pop("awaiting_alert_indicator", None)
+        if text in {"انصراف", "لغو", "بازگشت"}:
+            await update.message.reply_text("تنظیم آلارم لغو شد.")
+            return True
+        return False
+
+    user_id = (
+        update.effective_user.id
+    )
 
     # --------------------------------------------------------
     # CUSTOM INDICATOR
