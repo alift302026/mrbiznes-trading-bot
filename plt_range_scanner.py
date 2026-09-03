@@ -69,38 +69,70 @@ def _parse_env_file(path: Path) -> dict:
     return result
 
 
+_ENV_ORIGIN: dict[str, str] = {}  # env key -> file name that supplied it
+
+
 def _load_env(paths: list[Path]) -> None:
     """Load env files in order; real environment always wins."""
     for path in paths:
         for key, value in _parse_env_file(path).items():
             if key not in os.environ:
                 os.environ[key] = value
+                _ENV_ORIGIN[key] = path.name
 
 
 _load_env([DEDICATED_ENV_PATH, SHARED_ENV_PATH])
 
 
 def _lcw_key_candidates(dedicated_path: Path | None, shared_path: Path | None):
-    """Yield (source, key) in strict precedence order."""
-    yield "dedicated-env", os.getenv(
-        "PLT_SCANNER_LIVECOINWATCH_API_KEY", ""
-    ).strip()
+    """Yield (source, key) in strict precedence order.
+
+    The source label reports the TRUE origin: a value that was loaded
+    from the dedicated file at import time is reported as
+    "dedicated-file" (not "dedicated-env"), thanks to _ENV_ORIGIN.
+    """
+    dedicated_name = DEDICATED_ENV_PATH.name
+    shared_name = SHARED_ENV_PATH.name
+
+    key = "PLT_SCANNER_LIVECOINWATCH_API_KEY"
+    value = os.getenv(key, "").strip()
+    if value:
+        source = (
+            "dedicated-file"
+            if _ENV_ORIGIN.get(key) == dedicated_name
+            else "dedicated-env"
+        )
+        yield source, value
 
     dedicated_file = _parse_env_file(
         dedicated_path if dedicated_path is not None else DEDICATED_ENV_PATH
     )
-    yield "dedicated-file", (
-        dedicated_file.get("PLT_SCANNER_LIVECOINWATCH_API_KEY")
+    value = (
+        dedicated_file.get(key)
         or dedicated_file.get("LIVECOINWATCH_API_KEY")
         or ""
     ).strip()
+    if value:
+        yield "dedicated-file", value
 
-    yield "shared-env", os.getenv("LIVECOINWATCH_API_KEY", "").strip()
+    key = "LIVECOINWATCH_API_KEY"
+    value = os.getenv(key, "").strip()
+    if value:
+        origin = _ENV_ORIGIN.get(key)
+        if origin == dedicated_name:
+            source = "dedicated-file"
+        elif origin == shared_name:
+            source = "shared-file"
+        else:
+            source = "shared-env"
+        yield source, value
 
     shared_file = _parse_env_file(
         shared_path if shared_path is not None else SHARED_ENV_PATH
     )
-    yield "shared-file", shared_file.get("LIVECOINWATCH_API_KEY", "").strip()
+    value = shared_file.get(key, "").strip()
+    if value:
+        yield "shared-file", value
 
 
 def resolve_lcw_key(
