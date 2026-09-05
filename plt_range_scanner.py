@@ -823,7 +823,6 @@ def discover_channel_id(verbose: bool = True) -> str:
 
 
 def cmd_discover() -> int:
-    load_env()
     try:
         cid = discover_channel_id()
     except Exception as exc:
@@ -842,6 +841,40 @@ def cmd_discover() -> int:
     _save_state(state)
     print(f"[plt_range] saved discovered channel id -> {STATE_FILE}")
     print(f"[plt_range] set PLT_RANGE_CHANNEL_ID={cid} in .env (or it is now in state file)")
+    return 0
+
+
+def cmd_test_post() -> int:
+    """Send one test message to the channel (auto-discovers the id)."""
+    if not TELEGRAM_BOT_TOKEN:
+        print(
+            "[plt_range] TELEGRAM_BOT_TOKEN missing.\n"
+            "  Put your bot token in .env first:\n"
+            "    TELEGRAM_BOT_TOKEN=123456:ABC-...",
+            file=sys.stderr,
+        )
+        return 3
+    cid = resolve_channel_id()
+    if not cid:
+        print("[plt_range] channel id unknown -> trying to discover it ...")
+        cid = discover_channel_id()
+        if not cid:
+            return 2
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        state = _load_state()
+        state["discovered_channel_id"] = cid
+        _save_state(state)
+    text = (
+        "✅ PLT Range Scanner — connected.\n"
+        f"🕐 {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}\n"
+        "Next posts will arrive on the hourly scan schedule."
+    )
+    try:
+        tg_send_text(text)
+    except Exception as exc:
+        print(f"[plt_range] send failed: {exc}", file=sys.stderr)
+        return 2
+    print(f"[plt_range] test message posted to {cid}")
     return 0
 
 
@@ -1049,6 +1082,11 @@ def parse_args(argv: Optional[List[str]] = None):
         action="store_true",
         help="discover the private channel id from bot updates, save it, exit",
     )
+    parser.add_argument(
+        "--test-post",
+        action="store_true",
+        help="send one test message to the channel (discovers id if needed), exit",
+    )
     return parser.parse_args(argv)
 
 
@@ -1064,6 +1102,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         if args.discover:
             return cmd_discover()
+        if args.test_post:
+            return cmd_test_post()
         run_scan(fixture=args.fixture, force=args.force_post)
         return 0
     except Exception as exc:
