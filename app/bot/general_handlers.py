@@ -16,9 +16,8 @@ from telegram.ext import (
     ContextTypes,
 )
 
-from app.services.user_service import (
-    get_user,
-    referral_stats,
+from app.services.referral_service import (
+    referral_summary,
 )
 
 
@@ -84,34 +83,37 @@ async def referral_page(
     context,
 ):
 
-    stats = referral_stats(
+    info = referral_summary(
         update.effective_user.id
     )
 
-    if not stats:
+    link = (
+        info.get("link")
+        if info
+        else None
+    )
+
+    if not link or "?start=" not in link:
 
         return
 
-    me = await (
-        context.bot.get_me()
-    )
-
-    link = (
-        f"https://t.me/{me.username}"
-        f"?start={stats['code']}"
-    )
+    code = link.split(
+        "?start=",
+        1,
+    )[1]
 
     text = (
         "🎁 REFERRAL CENTER\n"
         "━━━━━━━━━━━━━━━━\n\n"
-        f"Code:\n{stats['code']}\n\n"
-        f"Invites: {stats['invites']}\n"
-        f"Points: {stats['points']}\n\n"
+        f"Code:\n{code}\n\n"
+        f"Invites: {info['invites']}\n"
+        f"Points: {info['points']}\n\n"
         f"🔗 Invite Link:\n{link}"
     )
 
     await update.message.reply_text(
-        text
+        text,
+        disable_web_page_preview=True,
     )
 
 
