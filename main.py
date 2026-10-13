@@ -10,6 +10,12 @@ from telegram.constants import (
     ChatMemberStatus,
 )
 
+from telegram.error import (
+    InvalidToken,
+    NetworkError,
+    TimedOut,
+)
+
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -26,9 +32,18 @@ from telegram.ext import (
 
 from app.core.config import (
     ADMIN_IDS,
+    BOT_CONNECT_TIMEOUT,
+    BOT_DROP_PENDING_UPDATES,
+    BOT_POOL_TIMEOUT,
+    BOT_READ_TIMEOUT,
     BOT_TOKEN,
     REQUIRED_CHANNEL,
     REQUIRED_CHANNEL_URL,
+    configure_proxy_environment,
+    get_proxy_url,
+    get_updates_proxy_url,
+    mask_proxy,
+    validate_bot_token,
 )
 
 
@@ -171,6 +186,13 @@ from app.bot.payment_handlers import (
 from app.bot.admin_payment_handlers import (
     admin_payment_callback,
     admin_payments_home,
+)
+
+from app.bot.diagnostics_handlers import (
+    diag_callback,
+    diagnostics_command,
+    ping_command,
+    telegram_id_command,
 )
 
 
@@ -1037,6 +1059,38 @@ async def error_handler(
         exc_info=context.error,
     )
 
+    # راهنمای خطاهای شبکه‌ای (فیلترینگ / پروکسی)
+    error_text = str(
+        context.error
+    ).lower()
+
+    if (
+        "connect" in error_text
+        or "timed out" in error_text
+        or "network" in error_text
+    ):
+
+        try:
+
+            has_proxy = bool(
+                get_proxy_url()
+            )
+
+        except ValueError:
+
+            has_proxy = False
+
+        logger.warning(
+            "راهنمای شبکه: %s",
+            (
+                "پروکسی تنظیم شده است؛ اگر خطا ادامه دارد "
+                "آدرس پروکسی را بررسی کنید (/diag)."
+                if has_proxy
+                else "پروکسی تنظیم نشده است. اگر سرور داخل ایران است، "
+                "BOT_PROXY_URL را در .env بگذارید (socks5://…)."
+            ),
+        )
+
 
 # ============================================================
 # BUILD APPLICATION
@@ -1048,16 +1102,97 @@ def build_application():
         bind=engine
     )
 
-    if not BOT_TOKEN:
-        raise ValueError(
-            "BOT_TOKEN is missing or empty. Please set BOT_TOKEN in your environment or .env file."
+    token_ok, token_message = (
+        validate_bot_token()
+    )
+
+    if not token_ok:
+        raise ValueError(token_message)
+
+    # --------------------------------------------------------
+    # PROXY (سرورهای داخل ایران)
+    # --------------------------------------------------------
+
+    try:
+
+        proxy_url = (
+            configure_proxy_environment()
         )
 
-    application = (
+    except (
+        ValueError,
+        RuntimeError,
+    ) as exc:
+
+        raise ValueError(
+            f"خطای تنظیمات پروکسی: {exc}"
+        ) from exc
+
+    updates_proxy_url = ""
+
+    if proxy_url:
+
+        updates_proxy_url = (
+            get_updates_proxy_url()
+        )
+
+    builder = (
         Application.builder()
         .token(BOT_TOKEN)
-        .build()
     )
+
+    if proxy_url:
+
+        builder = builder.proxy(
+            proxy_url
+        )
+
+        if (
+            updates_proxy_url
+            and updates_proxy_url
+            != proxy_url
+        ):
+
+            builder = (
+                builder.get_updates_proxy(
+                    updates_proxy_url
+                )
+            )
+
+        logger.info(
+            "Telegram proxy: %s",
+            mask_proxy(proxy_url),
+        )
+
+    else:
+
+        logger.info(
+            "Telegram proxy: none (direct connection)"
+        )
+        logger.info(
+            "اگر سرور داخل ایران است و ربات وصل نمی‌شود، "
+            "BOT_PROXY_URL را تنظیم کنید."
+        )
+
+    if BOT_CONNECT_TIMEOUT:
+
+        builder = builder.connect_timeout(
+            BOT_CONNECT_TIMEOUT
+        )
+
+    if BOT_READ_TIMEOUT:
+
+        builder = builder.read_timeout(
+            BOT_READ_TIMEOUT
+        )
+
+    if BOT_POOL_TIMEOUT:
+
+        builder = builder.pool_timeout(
+            BOT_POOL_TIMEOUT
+        )
+
+    application = builder.build()
 
     # START
     application.add_handler(
@@ -1086,6 +1221,35 @@ def build_application():
         CommandHandler(
             "removevip",
             admin_removevip_command,
+        )
+    )
+
+    # DIAGNOSTICS / SELF CHECK
+    application.add_handler(
+        CommandHandler(
+            "id",
+            telegram_id_command,
+        )
+    )
+
+    application.add_handler(
+        CommandHandler(
+            "diag",
+            diagnostics_command,
+        )
+    )
+
+    application.add_handler(
+        CommandHandler(
+            "ping",
+            ping_command,
+        )
+    )
+
+    application.add_handler(
+        CallbackQueryHandler(
+            diag_callback,
+            pattern="^diag_",
         )
     )
 
@@ -1308,6 +1472,14 @@ def build_application():
 
 def main():
 
+    try:
+
+        proxy_url = get_proxy_url()
+
+    except ValueError:
+
+        proxy_url = ""
+
     print(
         "\n"
         "========================================\n"
@@ -1331,6 +1503,13 @@ def main():
         "Exchange Hub      : ENABLED\n"
         "Performance       : ENABLED\n"
         "Admin Panel       : ENABLED\n"
+        "Network           : "
+        + (
+            f"PROXY {mask_proxy(proxy_url)}"
+            if proxy_url
+            else "DIRECT (بدون پروکسی)"
+        )
+        + "\n"
         "========================================\n"
     )
 
@@ -1342,11 +1521,76 @@ def main():
         "BOT RUNNING"
     )
 
-    application.run_polling(
-        allowed_updates=(
-            Update.ALL_TYPES
+    try:
+
+        application.run_polling(
+            allowed_updates=(
+                Update.ALL_TYPES
+            ),
+            drop_pending_updates=(
+                BOT_DROP_PENDING_UPDATES
+            ),
         )
-    )
+
+    except KeyboardInterrupt:
+
+        print(
+            "\n⏹ ربات دستی متوقف شد (Ctrl+C)."
+        )
+
+    except InvalidToken:
+
+        print(
+            "\n❌ توکن ربات (BOT_TOKEN) نامعتبر است یا باطل شده.\n"
+            "   از @BotFather توکن جدید بگیرید و در .env / Variables "
+            "سرور بگذارید.\n"
+        )
+
+        raise SystemExit(2)
+
+    except (
+        NetworkError,
+        TimedOut,
+    ) as exc:
+
+        try:
+
+            has_proxy = bool(
+                get_proxy_url()
+            )
+
+        except ValueError:
+
+            has_proxy = False
+
+        print(
+            "\n❌ اتصال به تلگرام برقرار نشد.\n"
+            f"   خطا: {type(exc).__name__}: {exc}\n"
+        )
+
+        if has_proxy:
+
+            print(
+                "   پروکسی تنظیم شده است "
+                f"({mask_proxy(get_proxy_url())}) ولی کار نکرد.\n"
+                "   ۱) روشن بودن پروکسی را چک کنید.\n"
+                "   ۲) با `python scripts/doctor.py` تست بگیرید.\n"
+                "   ۳) اگر پروکسی SOCKS است، مطمئن شوید socksio "
+                "نصب است.\n"
+            )
+
+        else:
+
+            print(
+                "   اگر سرور داخل ایران است، دسترسی مستقیم به تلگرام "
+                "بسته است.\n"
+                "   در .env این را تنظیم کنید و دوباره اجرا کنید:\n"
+                "      BOT_PROXY_URL=socks5://127.0.0.1:1080\n"
+                "   (پروکسی MTProto تلگرام برای ربات کار نمی‌کند؛ "
+                "SOCKS5 یا HTTP لازم است.)\n"
+            )
+
+        raise SystemExit(3)
 
 
 # ============================================================
