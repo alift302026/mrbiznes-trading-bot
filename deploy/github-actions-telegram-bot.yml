@@ -1,0 +1,117 @@
+# ============================================================
+#  اجرای ربات MrBiznes روی GitHub Actions  (بدون VPS / بدون ریلوی)
+# ============================================================
+#
+#  این فایل را باید در این مسیر مخزن بگذارید:
+#      .github/workflows/telegram-bot.yml
+#
+#  (روی گیت‌هاب → Add file → Create new file → همین مسیر را تایپ
+#   کنید و محتوای این فایل را از خط «name:» به بعد کپی کنید)
+#
+#  پیش‌نیاز: در Settings → Secrets and variables → Actions یک
+#  Secret به نام BOT_TOKEN با توکن @BotFather بسازید.
+#
+#  نتیجه: ربات روی سرورهای گیت‌هاب اجرا می‌شود، به تلگرام وصل
+#  می‌شود و می‌توانید از تلگرام خودتان تستش کنید.
+#  مخزن public است، پس دقایق اجرا رایگان و نامحدود است.
+#  هر Job حداکثر ۶ ساعت زنده می‌ماند؛ زمان‌بندی پایین هر ۶ ساعت
+#  دوباره روشنش می‌کند.
+# ============================================================
+
+name: Telegram Bot (no server)
+
+on:
+  # اجرای دستی: تب Actions → Telegram Bot (no server) → Run workflow
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "حداکثر مدت اجرا (دقیقه، حداکثر ۳۵۰)"
+        required: false
+        default: "348"
+
+  # اجرای خودکار هر ۶ ساعت (ربات ~۵ ساعت و ۴۸ دقیقه زنده می‌ماند)
+  schedule:
+    - cron: "0 */6 * * *"
+
+# جلوگیری از اجرای هم‌زمان دو نسخه (تلگرام فقط یک نسخه را می‌پذیرد)
+concurrency:
+  group: mrbiznes-telegram-bot
+  cancel-in-progress: false
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+
+    # سقف Job در گیت‌هاب ۶ ساعت است
+    timeout-minutes: 356
+
+    env:
+      # ---- توکن ربات (از Secret خوانده می‌شود؛ هیچ‌وقت داخل فایل نگذارید)
+      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+
+      # ---- ادمین‌ها (چند شناسه را با کاما جدا کنید)
+      ADMIN_IDS: "1432178804"
+
+      # ---- بررسی عضویت کانال: "off" = خاموش (برای تست)
+      #      بعداً بگذارید: "@MrBiznesMarket"
+      REQUIRED_CHANNEL: "off"
+
+      # ---- پیام‌های عقب‌افتاده حذف نشوند (بین دو اجرا چیزی گم نشود)
+      BOT_DROP_PENDING_UPDATES: "0"
+
+      PYTHONUNBUFFERED: "1"
+
+      # ---- کلیدهای اختیاری (اگر Secret ساخته باشید، خودکار رد می‌شوند)
+      XT_API_KEY: ${{ secrets.XT_API_KEY }}
+      XT_SECRET_KEY: ${{ secrets.XT_SECRET_KEY }}
+      TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      LIVECOINWATCH_API_KEY: ${{ secrets.LIVECOINWATCH_API_KEY }}
+
+      # ---- مدت اجرا برای اسکریپت پایین
+      BOT_MAX_MINUTES: ${{ github.event.inputs.minutes || '348' }}
+
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: نصب پایتون
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: نصب پیش‌نیازها
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: بازیابی دیتابیس ربات (کاربران و تنظیمات)
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: botdata-${{ github.run_id }}
+          restore-keys: |
+            botdata-
+
+      - name: چک سریع (دکتر)
+        continue-on-error: true
+        run: python scripts/doctor.py
+
+      - name: اجرای ربات
+        run: |
+          MAX_MINUTES="${BOT_MAX_MINUTES:-348}"
+          echo "⏱ ربات حداکثر ${MAX_MINUTES} دقیقه اجرا می‌شود."
+
+          set +e
+          timeout --preserve-status -s INT $((MAX_MINUTES * 60)) python main.py
+          code=$?
+          set -e
+
+          if [ "$code" -eq 0 ] || [ "$code" -eq 130 ] || [ "$code" -eq 124 ]; then
+            echo "✅ پایان زمان اجرا (طبیعی). اجرای بعدی طبق زمان‌بندی شروع می‌شود."
+          else
+            echo "❌ ربات با کد $code خارج شد — لاگ بالا را بخوانید."
+            exit "$code"
+          fi

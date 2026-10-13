@@ -3,7 +3,15 @@
 ربات تلگرام MrBiznes — بازار، سیگنال، آلارم، ژورنال، روان‌شناسی،
 تحلیل چارت PLT، رفرال، پشتیبانی و پنل ادمین.
 
-## شروع سریع
+## سریع‌ترین راه برای روشن کردن (بدون سرور)
+
+ربات می‌تواند روی **GitHub Actions** اجرا شود (رایگان، بیرون ایران، به
+تلگرام وصل می‌شود). فقط دو کار: توکن را در Secrets بگذارید و فایل
+[`deploy/github-actions-telegram-bot.yml`](deploy/github-actions-telegram-bot.yml)
+را در `.github/workflows/telegram-bot.yml` کپی کنید. جزئیات گام‌به‌گام:
+[`SETUP_FA.md`](SETUP_FA.md) بخش «۰».
+
+## شروع سریع (اجرای محلی)
 
 ```bash
 python3 -m venv .venv
@@ -17,7 +25,8 @@ cp .env.example .env                        # مقادیر را پر کنید
 
 | فایل | موضوع |
 |---|---|
-| [`SETUP_FA.md`](SETUP_FA.md) | راهنمای کامل فارسی: Railway، سرور ایران + پروکسی، عیب‌یابی |
+| [`SETUP_FA.md`](SETUP_FA.md) | راهنمای کامل فارسی: GitHub Actions، Railway، سرور ایران + پروکسی، عیب‌یابی |
+| [`deploy/github-actions-telegram-bot.yml`](deploy/github-actions-telegram-bot.yml) | فایل اجرای ربات روی GitHub Actions (بدون سرور) |
 | [`RAILWAY_SETUP.md`](RAILWAY_SETUP.md) | راه‌اندازی اسکنر PLT روی Railway (کرون) |
 | [`.env.example`](.env.example) | نمونه همه‌ی متغیرهای تنظیمات |
 
@@ -33,6 +42,7 @@ cp .env.example .env                        # مقادیر را پر کنید
 ## ابزارهای چک
 
 ```bash
+bash run_local.sh              # اجرای خودکار محلی (ویندوز: run_local.bat)
 python scripts/doctor.py       # توکن، شبکه، پروکسی، دیتابیس، کاربران
 python scripts/smoke_test.py   # تست import و ساخت اپلیکیشن بدون تماس با تلگرام
 ```
