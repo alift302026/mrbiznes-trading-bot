@@ -1,1 +1,51 @@
 # mrbiznes-trading-bot
+
+ربات تلگرام MrBiznes — بازار، سیگنال، آلارم، ژورنال، روان‌شناسی،
+تحلیل چارت PLT، رفرال، پشتیبانی و پنل ادمین.
+
+## شروع سریع
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt   # ویندوز: .venv\Scripts\pip
+cp .env.example .env                        # مقادیر را پر کنید
+.venv/bin/python scripts/doctor.py          # چک کامل قبل از اجرا
+.venv/bin/python main.py                    # روشن کردن ربات
+```
+
+## مستندات
+
+| فایل | موضوع |
+|---|---|
+| [`SETUP_FA.md`](SETUP_FA.md) | راهنمای کامل فارسی: Railway، سرور ایران + پروکسی، عیب‌یابی |
+| [`RAILWAY_SETUP.md`](RAILWAY_SETUP.md) | راه‌اندازی اسکنر PLT روی Railway (کرون) |
+| [`.env.example`](.env.example) | نمونه همه‌ی متغیرهای تنظیمات |
+
+## دستورهای داخل تلگرام
+
+| دستور | کار |
+|---|---|
+| `/start` | منوی اصلی |
+| `/id` | شناسه عددی تلگرام شما (برای `ADMIN_IDS`) |
+| `/ping` | سرعت پاسخ‌دهی ربات |
+| `/diag` | گزارش سلامت کامل (فقط ادمین) |
+
+## ابزارهای چک
+
+```bash
+python scripts/doctor.py       # توکن، شبکه، پروکسی، دیتابیس، کاربران
+python scripts/smoke_test.py   # تست import و ساخت اپلیکیشن بدون تماس با تلگرام
+```
+
+## سرورهای داخل ایران
+
+اگر سرور داخل ایران است، دسترسی مستقیم به `api.telegram.org` بسته است.
+در `.env` این را تنظیم کنید:
+
+```
+BOT_PROXY_URL=socks5://127.0.0.1:1080
+```
+
+> پروکسی باید **SOCKS5 یا HTTP** باشد؛ پروکسی MTProto تلگرام برای ربات
+> کار نمی‌کند. اگر روی Railway (خارج ایران) اجرا می‌کنید، پروکسی لازم
+> نیست.

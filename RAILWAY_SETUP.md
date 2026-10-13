@@ -1,5 +1,13 @@
 # PLT Range Scanner on Railway (step-by-step)
 
+> **راهنمای کامل فارسی روشن کردن خودِ ربات (نه فقط اسکنر):**
+> [`SETUP_FA.md`](SETUP_FA.md)
+>
+> نکته مهم: سرورهای Railway بیرون ایران هستند، پس **پروکسی لازم نیست**
+> (`BOT_PROXY_URL` را خالی بگذارید). سرویس اصلی ربات با دستور
+> `python main.py` بالا می‌آید؛ سرویس کرونی که همین فایل توضیح می‌دهد
+> (`python plt_range_scanner.py`) جداگانه ساخته می‌شود.
+
 Railway has **native cron jobs**: a service starts on a schedule, runs the
 command, and shuts down. No SSH / crontab needed.
 
